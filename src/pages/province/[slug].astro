@@ -5,7 +5,7 @@ import ReportList from '../../components/ReportList.astro';
 import TypeLegend from '../../components/TypeLegend.astro';
 import { PROVINCES, type Province } from '../../lib/provinces';
 import { reportsByProvince } from '../../lib/data';
-import { REPORT_TYPES } from '../../lib/types';
+import { REPORT_TYPES, SYSTEM_TYPES } from '../../lib/types';
 import { url } from '../../lib/url';
 
 export function getStaticPaths() {
@@ -13,15 +13,16 @@ export function getStaticPaths() {
 }
 const { province } = Astro.props as { province: Province };
 const list = reportsByProvince(province.slug);
-const byType = REPORT_TYPES.map((t) => ({ ...t, n: list.filter((r) => r.type === t.id).length })).filter((t) => t.n > 0).sort((a, b) => b.n - a.n);
+const byType = [...REPORT_TYPES, ...SYSTEM_TYPES].map((t) => ({ ...t, n: list.filter((r) => r.type === t.id).length })).filter((t) => t.n > 0).sort((a, b) => b.n - a.n);
 const near = PROVINCES.filter((p) => p.slug !== province.slug)
   .map((p) => ({ p, d: (p.lat - province.lat) ** 2 + (p.lng - province.lng) ** 2 }))
   .sort((a, b) => a.d - b.d).slice(0, 6).map((x) => x.p);
 const site = Astro.site;
 const abs = (p: string) => (site ? new URL(url(p), site).href : url(p));
+const nSrc = (k: string) => list.filter((r) => r.source === k).length;
 const summary = list.length
-  ? `มีรายงาน ${list.length} รายการในช่วง 30 วันที่ผ่านมา ประเภทที่พบมากที่สุดคือ${byType[0].label}`
-  : 'ยังไม่มีรายงานในช่วง 30 วันที่ผ่านมา';
+  ? `มีข้อมูล ${list.length} รายการ (ประชาชน ${nSrc('community')} · ข่าว ${nSrc('news')} · ข้อมูลทางการ ${nSrc('government')})${byType[0] ? ` ประเภทที่พบมากที่สุดคือ${byType[0].label}` : ''}`
+  : 'ยังไม่มีรายงานหรือข้อมูลอ้างอิง';
 ---
 <Base
   title={`คุณภาพน้ำ ${province.name} — รายงานน้ำเสีย ปลาตาย น้ำเปลี่ยนสี`}
