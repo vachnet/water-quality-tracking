@@ -1,0 +1,10 @@
+---
+import type { Source } from '../lib/types';
+interface Props { source: Source; size?: number }
+const { source, size = 14 } = Astro.props;
+---
+<svg class:list={['src-ico', `src-${source}`]} width={size} height={size} viewBox="0 0 16 16" aria-hidden="true">
+  {source === 'government' && <><rect x="1.5" y="1.5" width="13" height="13" rx="3" fill="var(--c)" /><rect x="6" y="6" width="4" height="4" fill="var(--surface)" /></>}
+  {source === 'news' && <><path d="M8 0.6 15.4 8 8 15.4 0.6 8z" fill="var(--c)" /><path d="M8 5.6 10.4 8 8 10.4 5.6 8z" fill="var(--surface)" /></>}
+  {source === 'community' && <><circle cx="8" cy="8" r="6.8" fill="var(--c)" /><circle cx="8" cy="8" r="2" fill="var(--surface)" /></>}
+</svg>

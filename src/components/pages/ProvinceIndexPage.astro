@@ -1,0 +1,79 @@
+---
+import Base from '../../layouts/Base.astro';
+import SourceIcon from '../SourceIcon.astro';
+import { PROVINCES } from '../../lib/provinces';
+import { reports, countBySource } from '../../lib/data';
+import { SOURCES } from '../../lib/types';
+import { abs } from '../../lib/url';
+import { t, lurl, lpath, type Lang } from '../../lib/i18n';
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const d = t(lang);
+const name = (p: (typeof PROVINCES)[number]) => (lang === 'en' ? p.nameEn : p.name);
+const rows = PROVINCES.map((p) => ({ p, c: countBySource(reports.filter((r) => r.province === p.slug)) }))
+  .sort((a, b) => b.c.all - a.c.all || name(a.p).localeCompare(name(b.p), lang));
+const copy = {
+  th: { title: 'คุณภาพน้ำรายจังหวัด ทั้ง 77 จังหวัด', description: 'เลือกดูข้อมูลคุณภาพน้ำแยกตามจังหวัดทั่วประเทศไทย ทั้งค่าดัชนีทางการ ข่าว และรายงานจากประชาชน อัปเดตทุกชั่วโมง', h1: 'คุณภาพน้ำรายจังหวัด', lead: 'จังหวัดที่มีข้อมูลมากที่สุดอยู่ด้านบน', search: 'ค้นหาจังหวัด', withData: 'มีข้อมูล', noData: 'ยังไม่มีข้อมูล', none: 'ไม่พบจังหวัดที่ค้นหา' },
+  en: { title: 'Water quality by province — all 77 provinces of Thailand', description: 'Browse water quality information for every province in Thailand: official index readings, news incidents and community reports, updated hourly.', h1: 'Water quality by province', lead: 'Provinces with the most information are listed first.', search: 'Search provinces', withData: 'With data', noData: 'No data yet', none: 'No province matches your search.' },
+}[lang];
+const withData = rows.filter((r) => r.c.all > 0);
+const noData = rows.filter((r) => r.c.all === 0);
+---
+<Base lang={lang} title={copy.title} description={copy.description} path="/province/"
+  jsonLd={{ '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
+    { '@type': 'ListItem', position: 1, name: d.home, item: abs(lpath(lang, '/'), Astro.site) },
+    { '@type': 'ListItem', position: 2, name: d.nav.provinces },
+  ] }}
+>
+  <div class="wrap section">
+    <nav aria-label={d.breadcrumb} class="crumbs"><ol><li><a href={lurl(lang, '/')}>{d.home}</a></li><li aria-current="page">{d.nav.provinces}</li></ol></nav>
+    <h1>{copy.h1}</h1>
+    <p class="muted">{copy.lead}</p>
+    <div class="psearch">
+      <label class="sr-only" for="psearch">{copy.search}</label>
+      <input id="psearch" type="search" placeholder={copy.search} autocomplete="off" />
+    </div>
+    {[{ h: copy.withData, list: withData }, { h: copy.noData, list: noData }].filter((g) => g.list.length).map((g) => (
+      <section class="pgroup">
+        <h2>{g.h} <span class="muted">({g.list.length})</span></h2>
+        <ul class="plist">
+          {g.list.map(({ p, c }) => (
+            <li data-name={`${p.name} ${p.nameEn}`.toLowerCase()}>
+              <a class:list={['pcard', c.all > 0 && 'has']} href={lurl(lang, `/province/${p.slug}/`)}>
+                <span class="pname">{name(p)}</span>
+                {c.all > 0 && (
+                  <span class="pcounts">
+                    {SOURCES.filter((s) => c[s] > 0).map((s) => <span class="pc" title={d.source[s]}><SourceIcon source={s} size={12} /><span class="sr-only">{d.source[s]}</span>{c[s]}</span>)}
+                  </span>
+                )}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))}
+    <p class="empty" id="pnone" hidden>{copy.none}</p>
+  </div>
+</Base>
+<script>
+  const input = document.getElementById('psearch') as HTMLInputElement;
+  input.addEventListener('input', () => {
+    const q = input.value.trim().toLowerCase();
+    let any = false;
+    document.querySelectorAll<HTMLElement>('.plist li').forEach((li) => { const ok = !q || li.dataset.name!.includes(q); li.hidden = !ok; any ||= ok; });
+    document.querySelectorAll<HTMLElement>('.pgroup').forEach((g) => (g.hidden = !g.querySelector('li:not([hidden])')));
+    document.getElementById('pnone')!.hidden = any;
+  });
+</script>
+<style>
+  .psearch { max-width: 420px; margin: var(--sp-4) 0 var(--sp-5); }
+  .pgroup { margin-bottom: var(--sp-6); }
+  .pgroup h2 { font-size: var(--fs-lg); }
+  .plist { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--sp-2); }
+  .pcard { display: flex; justify-content: space-between; align-items: center; gap: var(--sp-2); min-height: 56px; padding: 10px 16px; border-radius: var(--r-md); background: var(--surface); border: 1px solid var(--border); text-decoration: none; color: var(--text); font-weight: 600; transition: border-color 0.15s, box-shadow 0.15s; }
+  .pcard:hover { border-color: var(--primary); box-shadow: var(--e-2); color: var(--text); }
+  .pcard:not(.has) { font-weight: 500; color: var(--muted); background: transparent; }
+  .pcounts { display: inline-flex; gap: 8px; font-size: var(--fs-xs); }
+  .pc { display: inline-flex; align-items: center; gap: 3px; }
+</style>

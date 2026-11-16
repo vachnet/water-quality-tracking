@@ -19,8 +19,11 @@ export default defineConfig({
   trailingSlash: 'always',
   integrations: [
     sitemap({
+      // Thai is the default language at the existing URLs; English mirrors them under /en/.
+      i18n: { defaultLocale: 'th', locales: { th: 'th', en: 'en' } },
       filter: (page) => {
         if (page.includes('/admin/')) return false;
+        // Province pages (both languages) with no data are noindex, so keep them out too.
         const m = page.match(/\/province\/([^/]+)\/$/);
         return !m || active.has(m[1]);
       },

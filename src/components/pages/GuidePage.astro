@@ -1,0 +1,59 @@
+---
+import Base from '../../layouts/Base.astro';
+import { abs } from '../../lib/url';
+import { t, lurl, lpath, type Lang } from '../../lib/i18n';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const d = t(lang);
+const c = {
+  th: {
+    title: 'คู่มือสังเกตน้ำเสียและวิธีแจ้งเหตุ',
+    description: 'วิธีสังเกตสัญญาณน้ำเสีย ปลาตาย น้ำเปลี่ยนสี คราบน้ำมัน พร้อมข้อควรระวังและวิธีแจ้งเหตุอย่างมีประสิทธิภาพ',
+    intro: 'รู้จักสัญญาณเตือนของแหล่งน้ำที่มีปัญหา และแจ้งเหตุให้ข้อมูลครบถ้วนที่สุด เพื่อให้เจ้าหน้าที่และชุมชนใช้ประโยชน์ได้เร็ว',
+    signsH: 'สัญญาณที่ควรแจ้ง',
+    signs: [
+      ['ปลาตายหรือลอยหัว', 'อาจเกิดจากออกซิเจนในน้ำต่ำหรือมีสารพิษ โดยเฉพาะหากตายพร้อมกันหลายตัว'],
+      ['น้ำเปลี่ยนสี', 'เขียวเข้ม ดำ ขาวขุ่น หรือแดงผิดปกติ'],
+      ['กลิ่นเหม็นเน่า', 'กลิ่นไข่เน่าหรือสารเคมี'],
+      ['คราบน้ำมัน ฟอง หรือขยะ', 'ลอยเป็นแพกว้างหรือเกิดซ้ำ ๆ'],
+      ['ท่อระบายน้ำเสีย', 'เห็นการปล่อยน้ำลงแหล่งน้ำโดยตรง'],
+    ],
+    howH: 'แจ้งเหตุอย่างไรให้มีประโยชน์',
+    how: ['เลือกประเภทเหตุการณ์ให้ตรงที่สุด', 'ระบุตำแหน่งด้วย GPS ขณะอยู่ที่จุดเกิดเหตุ', 'ใส่เวลาที่พบจริง หากแจ้งย้อนหลัง', 'เพิ่มรายละเอียดสั้น ๆ เช่น ชื่อคลองหรือจำนวนปลา โดยไม่ระบุชื่อบุคคล'],
+    careH: 'ข้อควรระวัง',
+    care: ['อย่าสัมผัสน้ำหรือปลาที่ตายด้วยมือเปล่า', 'รายงานจากประชาชนบนเว็บนี้ไม่ใช่ผลตรวจอย่างเป็นทางการ', 'หากเหตุร้ายแรงหรือเร่งด่วน ให้แจ้งหน่วยงานท้องถิ่นหรือสายด่วนของหน่วยงานรัฐโดยตรงควบคู่กัน'],
+  },
+  en: {
+    title: 'How to spot water pollution and report it',
+    description: 'How to recognise signs of polluted water — fish kills, discoloured water, oil slicks — what to watch out for, and how to make a useful report.',
+    intro: 'Learn the warning signs of a water body in trouble, and how to report it so officials and neighbours can act quickly.',
+    signsH: 'Signs worth reporting',
+    signs: [
+      ['Dead or gasping fish', 'Often a sign of low oxygen or toxic substances — especially when many die at once.'],
+      ['Discoloured water', 'Unusually dark green, black, milky white or red.'],
+      ['Foul smell', 'Rotten-egg or chemical smells.'],
+      ['Oil, foam or trash', 'Wide slicks or floating rafts, or the same problem coming back.'],
+      ['Wastewater pipes', 'Water being discharged straight into a canal, river or pond.'],
+    ],
+    howH: 'How to make a useful report',
+    how: ['Pick the closest incident type.', 'Use GPS while you are at the spot.', 'Set the real time if you are reporting later.', 'Add a short note, e.g. the canal name or number of fish — never anyone’s name.'],
+    careH: 'Stay safe',
+    care: ['Do not touch the water or dead fish with bare hands.', 'Community reports on this site are not official test results.', 'If it is serious or urgent, also contact your local authority or the relevant government hotline directly.'],
+  },
+}[lang];
+---
+<Base lang={lang} title={c.title} description={c.description} path="/guide/"
+  jsonLd={{ '@context': 'https://schema.org', '@type': 'Article', headline: c.title, inLanguage: lang === 'th' ? 'th-TH' : 'en', mainEntityOfPage: abs(lpath(lang, '/guide/'), Astro.site) }}>
+  <article class="wrap section prose">
+    <nav aria-label={d.breadcrumb} class="crumbs"><ol><li><a href={lurl(lang, '/')}>{d.home}</a></li><li aria-current="page">{d.nav.guide}</li></ol></nav>
+    <h1>{c.title}</h1>
+    <p class="lead">{c.intro}</p>
+    <h2>{c.signsH}</h2>
+    <ul>{c.signs.map(([h, p]) => <li><strong>{h}</strong> — {p}</li>)}</ul>
+    <h2>{c.howH}</h2>
+    <ol>{c.how.map((x) => <li>{x}</li>)}</ol>
+    <h2>{c.careH}</h2>
+    <ul>{c.care.map((x) => <li>{x}</li>)}</ul>
+    <p><a class="btn accent big" href={lurl(lang, '/report/')}>{d.reportCtaLong}</a></p>
+  </article>
+</Base>

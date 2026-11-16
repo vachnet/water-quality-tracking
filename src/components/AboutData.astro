@@ -1,0 +1,32 @@
+---
+import SourceIcon from './SourceIcon.astro';
+import { t, PCD_DATASET, type Lang } from '../lib/i18n';
+import { SOURCES } from '../lib/types';
+interface Props { lang: Lang; headingLevel?: 2 | 3; id?: string }
+const { lang, id = 'about-data' } = Astro.props;
+const d = t(lang);
+const body = { government: d.aboutData.gov, news: d.aboutData.news, community: d.aboutData.community };
+---
+<section class="about-data" aria-labelledby={id}>
+  <h2 id={id}>{d.aboutData.h}</h2>
+  <p class="muted ad-intro">{d.aboutData.intro}</p>
+  <ul class="ad-grid">
+    {SOURCES.map((s) => (
+      <li class:list={['card', `src-${s}`]}>
+        <h3><SourceIcon source={s} size={18} /> {d.source[s]}</h3>
+        <p>{body[s]}</p>
+        {s === 'community' && <span class="badge warn">{d.unverified}</span>}
+      </li>
+    ))}
+  </ul>
+  <p class="notice info ad-note"><span aria-hidden="true">📍</span> {d.aboutData.location}</p>
+  <p class="small muted">{d.aboutData.attribution} <a href={PCD_DATASET} target="_blank" rel="noopener noreferrer">{d.aboutData.dataset} ↗<span class="sr-only"> {d.newTab}</span></a></p>
+</section>
+<style>
+  .ad-intro { max-width: 65ch; }
+  .ad-grid { list-style: none; padding: 0; margin: var(--sp-4) 0; display: grid; gap: var(--sp-4); grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  .ad-grid .card { border-top: 4px solid var(--c); }
+  .ad-grid h3 { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .ad-grid p { margin: 0 0 8px; color: var(--muted); font-size: var(--fs-sm); }
+  .ad-note { margin: 0 0 var(--sp-3); }
+</style>

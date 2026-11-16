@@ -1,10 +1,17 @@
 ---
 import Base from '../layouts/Base.astro';
-import { url } from '../lib/url';
+import { lurl } from '../lib/i18n';
 ---
-<Base title="ไม่พบหน้าที่ต้องการ" description="ไม่พบหน้าที่คุณกำลังมองหา" path="/404/" noindex>
-  <div class="wrap section prose">
+<Base title="ไม่พบหน้าที่ต้องการ · Page not found" description="ไม่พบหน้าที่คุณกำลังมองหา · The page you are looking for was not found." path="/404/" noindex alternates={false}>
+  <div class="wrap section nf">
+    <p class="code" aria-hidden="true">404</p>
     <h1>ไม่พบหน้าที่ต้องการ</h1>
-    <p><a class="btn" href={url('/')}>กลับหน้าแรก</a></p>
+    <p class="muted" lang="en">Page not found.</p>
+    <p class="acts"><a class="btn" href={lurl('th', '/')}>กลับหน้าแรก</a> <a class="btn secondary" href={lurl('en', '/')} lang="en">Go to the English home page</a></p>
   </div>
 </Base>
+<style>
+  .nf { text-align: center; }
+  .code { font-size: 4rem; font-weight: 700; color: var(--primary); margin: 0; line-height: 1; }
+  .acts { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--sp-2); }
+</style>

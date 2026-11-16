@@ -1,0 +1,268 @@
+---
+// Map + source filter chips + list panel. Filtering happens client-side on data already in the page.
+import ReportCard from './ReportCard.astro';
+import SourceIcon from './SourceIcon.astro';
+import { t, type Lang } from '../lib/i18n';
+import { countBySource, listSelection, toView } from '../lib/data';
+import { SOURCES, type Report, type Source } from '../lib/types';
+import type { MapStrings } from '../lib/map';
+
+interface Props {
+  lang: Lang;
+  items: Report[];
+  center?: [number, number];
+  zoom?: number;
+  label?: string;
+  grouped?: boolean;
+  showProvince?: boolean;
+  listTitle?: string;
+}
+const { lang, items, center, zoom, label, grouped = false, showProvince = true, listTitle } = Astro.props;
+const d = t(lang);
+const views = items.map((r) => toView(r, lang));
+const listIds = new Set(listSelection(items).map((r) => r.id));
+const list = views.filter((v) => listIds.has(v.id));
+const counts = countBySource(items);
+const chips: (Source | 'all')[] = ['all', ...SOURCES];
+const strings: MapStrings = {
+  source: { government: d.source.government, news: d.source.news, community: d.source.community },
+  unverified: d.unverified,
+  flagged: d.flagged,
+  approximate: d.approximate,
+  provinceLevel: d.provinceLevel,
+  sourcePrefix: d.sourcePrefix,
+  newTab: d.newTab,
+  inThai: d.inThai,
+  locate: d.map.locate,
+  locating: d.map.locating,
+  noGeo: d.map.noGeo,
+  denied: d.map.denied,
+  geoFail: d.map.geoFail,
+  here: d.map.here(-1).replace('-1', '{n}'),
+  cluster: d.map.cluster(-1).replace('-1', '{n}'),
+  failed: d.map.failed,
+};
+const groups = grouped ? SOURCES.map((s) => ({ s, items: list.filter((v) => v.source === s) })).filter((g) => g.items.length) : [];
+---
+<div class="explorer ex-collapsed" data-lang={lang}>
+  <div class="chips" role="group" aria-label={d.explorer.filterLabel}>
+    {chips.map((c) => (
+      <button type="button" class:list={['chip', c !== 'all' && `src-${c}`]} data-filter={c} aria-pressed={c === 'all' ? 'true' : 'false'} disabled={c !== 'all' && counts[c] === 0}>
+        {c !== 'all' && <SourceIcon source={c} size={14} />}
+        <span>{d.source[c]}</span>
+        <span class="chip-n">{counts[c]}</span>
+      </button>
+    ))}
+  </div>
+
+  <div class="ex-grid">
+    <div class="map-shell" data-center={center ? JSON.stringify(center) : undefined} data-zoom={zoom}>
+      <div class="map-canvas" role="region" aria-label={label ?? d.map.label}></div>
+      <div class="map-placeholder skeleton" aria-hidden="false">
+        <p>{d.map.loading}</p>
+        <noscript>{d.map.noscript}</noscript>
+      </div>
+      <script type="application/json" class="map-data" set:html={JSON.stringify(views)} />
+      <script type="application/json" class="map-strings" set:html={JSON.stringify(strings)} />
+      <p class="map-legend small">
+        {SOURCES.map((s) => <span><SourceIcon source={s} size={12} />{d.source[s]}</span>)}
+        <span class="halo-key"><span class="halo" aria-hidden="true"></span>{d.explorer.halo}</span>
+      </p>
+    </div>
+
+    <section class="ex-panel" aria-label={listTitle ?? d.explorer.listTitle}>
+      <div class="ex-head">
+        <h2>{listTitle ?? d.explorer.listTitle}</h2>
+        <p class="muted small ex-count" aria-live="polite">{d.explorer.showing(list.length)}</p>
+      </div>
+      <div class="ex-scroll" tabindex="0" aria-label={listTitle ?? d.explorer.listTitle}>
+        {list.length === 0 && <div class="empty"><span class="ico" aria-hidden="true">💧</span>{d.explorer.emptyAll}</div>}
+        {grouped ? (
+          groups.map((g) => (
+            <section class="ex-group" data-group={g.s}>
+              <h3 class="ex-gh"><SourceIcon source={g.s} size={14} />{d.source[g.s]} <span class="muted">({g.items.length})</span></h3>
+              <p class="muted small ex-gd">{d.sourceLong[g.s]}</p>
+              <ul class="ex-list">{g.items.map((r) => <ReportCard r={r} lang={lang} showProvince={showProvince} />)}</ul>
+            </section>
+          ))
+        ) : (
+          <ul class="ex-list">{list.map((r) => <ReportCard r={r} lang={lang} showProvince={showProvince} />)}</ul>
+        )}
+        <button type="button" class="btn secondary block ex-more" hidden>{d.explorer.showAll}</button>
+        <div class="empty ex-empty" hidden><span class="ico" aria-hidden="true">🔎</span>{d.explorer.empty}</div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+  import { createMap, type MapHandle } from '../lib/map';
+
+  document.querySelectorAll<HTMLElement>('.explorer').forEach((root) => {
+    const shell = root.querySelector<HTMLElement>('.map-shell')!;
+    const canvas = shell.querySelector<HTMLElement>('.map-canvas')!;
+    const scroll = root.querySelector<HTMLElement>('.ex-scroll')!;
+    const count = root.querySelector<HTMLElement>('.ex-count')!;
+    const countTpl = count.textContent ?? '';
+    const cards = [...root.querySelectorAll<HTMLElement>('.rcard')];
+    const PREVIEW = 5;
+    const moreBtn = root.querySelector<HTMLButtonElement>('.ex-more')!;
+    const moreTpl = moreBtn.textContent ?? '';
+    moreBtn.addEventListener('click', () => { root.classList.remove('ex-collapsed'); moreBtn.hidden = true; });
+    let handle: MapHandle | undefined;
+    let pending: { filter?: string; focus?: string } = {};
+
+    // ---- filter chips ----
+    const applyFilter = (f: string) => {
+      root.querySelectorAll<HTMLButtonElement>('.chip').forEach((c) => c.setAttribute('aria-pressed', String(c.dataset.filter === f)));
+      let n = 0;
+      for (const c of cards) {
+        const show = f === 'all' || c.dataset.source === f;
+        c.hidden = !show;
+        if (show) n++;
+      }
+      root.querySelectorAll<HTMLElement>('.ex-group').forEach((g) => (g.hidden = !(f === 'all' || g.dataset.group === f)));
+      root.querySelector<HTMLElement>('.ex-empty')!.hidden = n > 0 || cards.length === 0;
+      count.textContent = countTpl.replace(/\d+/, String(n));
+      // Phones: show the first few, then "Show all" (keeps the page short and the map reachable).
+      let i = 0;
+      for (const c of cards) { if (!c.hidden) c.toggleAttribute('data-more', i++ >= PREVIEW); else c.removeAttribute('data-more'); }
+      moreBtn.hidden = n <= PREVIEW || !root.classList.contains('ex-collapsed');
+      moreBtn.textContent = moreTpl.replace('{n}', String(n));
+      if (handle) handle.setFilter(f as never);
+      else pending.filter = f;
+    };
+    root.querySelectorAll<HTMLButtonElement>('.chip').forEach((c) => c.addEventListener('click', () => applyFilter(c.dataset.filter!)));
+    applyFilter('all');
+
+    // ---- list <-> map ----
+    const highlight = (id: string, scrollTo: boolean) => {
+      for (const c of cards) c.classList.toggle('is-active', c.dataset.id === id);
+      const card = cards.find((c) => c.dataset.id === id);
+      // Only scroll inside the side panel (desktop); never yank the page on mobile.
+      if (card && scrollTo && scroll.scrollHeight > scroll.clientHeight + 4) {
+        scroll.scrollTo({ top: card.offsetTop - scroll.offsetTop - 8, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+      }
+    };
+    root.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-focus]');
+      if (!btn) return;
+      const id = btn.dataset.focus!;
+      highlight(id, false);
+      if (shell.getBoundingClientRect().top < 0 || shell.getBoundingClientRect().bottom > innerHeight) shell.scrollIntoView({ block: 'center' });
+      if (handle) handle.focus(id);
+      else { pending.focus = id; start(); }
+    });
+
+    // ---- lazy map ----
+    let started = false;
+    const start = () => {
+      if (started) return;
+      started = true;
+      const items = JSON.parse(shell.querySelector('.map-data')!.textContent || '[]');
+      const strings = JSON.parse(shell.querySelector('.map-strings')!.textContent || '{}');
+      createMap(canvas, {
+        items,
+        strings,
+        center: shell.dataset.center ? JSON.parse(shell.dataset.center) : undefined,
+        zoom: shell.dataset.zoom ? Number(shell.dataset.zoom) : undefined,
+        onSelect: (id) => highlight(id, true),
+      })
+        .then((h) => {
+          handle = h;
+          shell.classList.add('ready');
+          if (pending.filter) h.setFilter(pending.filter as never);
+          h.map.once('load', () => { if (pending.filter) h.setFilter(pending.filter as never); if (pending.focus) h.focus(pending.focus); });
+        })
+        .catch(() => {
+          const p = shell.querySelector('.map-placeholder p');
+          shell.querySelector('.map-placeholder')?.classList.remove('skeleton');
+          if (p) p.textContent = JSON.parse(shell.querySelector('.map-strings')!.textContent || '{}').failed ?? '';
+        });
+    };
+    // Load only when near the viewport and the browser is idle (keeps LCP/INP clean).
+    const idle = (cb: () => void) => ('requestIdleCallback' in window ? requestIdleCallback(cb, { timeout: 1500 }) : setTimeout(cb, 200));
+    new IntersectionObserver((entries, obs) => {
+      if (entries.some((e) => e.isIntersecting)) { obs.disconnect(); idle(start); }
+    }, { rootMargin: '200px' }).observe(shell);
+  });
+</script>
+
+<style is:global>
+  .chips { display: flex; gap: var(--sp-2); overflow-x: auto; padding: 2px 2px var(--sp-3); margin: 0 -2px; scrollbar-width: none; }
+  .chip { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border-radius: var(--r-pill); border: 1.5px solid var(--border); background: var(--surface); color: var(--text); font-weight: 600; font-size: var(--fs-sm); cursor: pointer; white-space: nowrap; transition: background 0.15s, border-color 0.15s; }
+  .chip:hover { border-color: var(--primary); }
+  .chip[aria-pressed='true'] { background: var(--text); border-color: var(--text); color: var(--surface); }
+  .chip[aria-pressed='true'] .src-ico { --c: var(--surface); }
+  .chip[aria-pressed='true'] .src-ico [fill='var(--surface)'] { fill: var(--text); }
+  .chip[disabled] { opacity: 0.45; cursor: not-allowed; }
+  .chip-n { font-size: var(--fs-xs); padding: 0 8px; border-radius: var(--r-pill); background: var(--surface-2); color: var(--text); min-width: 24px; text-align: center; }
+  .chip[aria-pressed='true'] .chip-n { background: color-mix(in srgb, var(--surface) 20%, transparent); color: var(--surface); }
+
+  .ex-grid { display: grid; gap: var(--sp-4); grid-template-columns: minmax(0, 1fr) 400px; align-items: start; }
+  .ex-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-xl); box-shadow: var(--e-1); display: flex; flex-direction: column; height: var(--map-h, 620px); min-height: 0; }
+  .ex-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-3); padding: var(--sp-4) var(--sp-4) var(--sp-2); border-bottom: 1px solid var(--border); }
+  .ex-head h2 { font-size: var(--fs-lg); margin: 0; }
+  .ex-head p { margin: 0; }
+  .ex-scroll { overflow-y: auto; padding: var(--sp-3); flex: 1; min-height: 0; overscroll-behavior: contain; border-radius: 0 0 var(--r-xl) var(--r-xl); }
+  .ex-list { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--sp-3); }
+  .ex-group + .ex-group { margin-top: var(--sp-5); }
+  .ex-gh { display: flex; align-items: center; gap: 8px; font-size: var(--fs-md); margin: 0; }
+  .ex-gd { margin: 0 0 var(--sp-2); }
+
+  .map-shell { position: relative; height: var(--map-h, 620px); border-radius: var(--r-xl); overflow: hidden; border: 1px solid var(--border); background: var(--surface-2); box-shadow: var(--e-1); }
+  .map-shell .map-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .map-placeholder { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); pointer-events: none; text-align: center; padding: var(--sp-4); }
+  .map-shell.ready .map-placeholder { display: none; }
+  .map-legend { position: absolute; left: 10px; bottom: 10px; z-index: 2; display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 0; padding: 6px 12px; max-width: calc(100% - 120px); border-radius: var(--r-md); background: rgb(255 255 255 / 0.92); color: #0c2230; box-shadow: var(--e-1); font-size: var(--fs-xs); }
+  .map-legend > span { display: inline-flex; align-items: center; gap: 5px; }
+  .map-legend .src-government { --c: #2f45c0; } .map-legend .src-news { --c: #b45309; } .map-legend .src-community { --c: #0f766e; }
+  .map-legend .src-ico [fill='var(--surface)'] { fill: #fff; }
+  .halo { width: 14px; height: 14px; border-radius: 50%; background: rgb(15 118 110 / 0.22); display: inline-block; }
+  .map-shell:not(.ready) .map-legend { display: none; }
+
+  @media (max-width: 980px) {
+    .ex-grid { grid-template-columns: 1fr; }
+    .map-shell { height: min(62vh, 480px); }
+    .ex-panel { height: auto; box-shadow: none; border: 0; background: transparent; }
+    .ex-head { padding: var(--sp-2) 0; border: 0; }
+    .ex-scroll { overflow: visible; padding: 0; }
+    .map-legend .halo-key { display: none; }
+    .ex-collapsed [data-more] { display: none; }
+    .ex-more { margin-top: var(--sp-3); }
+    .rc-desc { -webkit-line-clamp: 3; }
+  }
+  @media (min-width: 981px) { .ex-more { display: none; } }
+
+  .map-note { position: absolute; left: 12px; right: 56px; top: 12px; z-index: 5; padding: 10px 14px; border-radius: var(--r-md); background: var(--warn-bg); color: var(--warn-text); font-size: var(--fs-sm); box-shadow: var(--e-2); }
+  .locate-btn { display: grid !important; place-items: center; }
+  .locate-btn.busy svg { animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .me-dot { width: 18px; height: 18px; border-radius: 50%; background: #1a73e8; border: 3px solid #fff; box-shadow: 0 0 0 6px rgb(26 115 232 / 0.25); }
+  .cluster { display: grid; place-items: center; border-radius: 50%; border: 3px solid #fff; background: #0a4f7c; color: #fff; font: 700 13px/1 var(--font); cursor: pointer; box-shadow: 0 2px 8px rgb(0 0 0 / 0.3); width: 36px; height: 36px; }
+  .cluster.m { width: 44px; height: 44px; font-size: 14px; }
+  .cluster.l { width: 54px; height: 54px; font-size: 15px; }
+  .cluster:hover { background: #062a40; }
+  .cluster:focus-visible { outline: 3px solid #1b7fd1; outline-offset: 2px; }
+
+  .map-shell .maplibregl-popup-content { font-family: var(--font); border-radius: 14px; padding: 14px 16px; box-shadow: var(--e-3); max-height: min(340px, 52vh); overflow-y: auto; overscroll-behavior: contain; }
+  .map-shell .maplibregl-popup-close-button { width: 32px; height: 32px; font-size: 22px; line-height: 1; border-radius: 8px; color: #0c2230; background: transparent; }
+  .map-shell .maplibregl-popup-close-button:hover { background: #eef3f6; }
+  .map-popup { color: #0c2230; font-size: 0.9rem; line-height: 1.5; padding-right: 14px; }
+  .map-popup .pp-top { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+  .map-popup .pp-src { font-size: 0.75rem; font-weight: 700; padding: 1px 8px; border-radius: 999px; color: #fff; }
+  .map-popup .pp-src.government { background: #2f45c0; } .map-popup .pp-src.news { background: #a14a06; } .map-popup .pp-src.community { background: #0f766e; }
+  .map-popup .pp-flag { font-size: 0.75rem; font-weight: 700; padding: 1px 8px; border-radius: 999px; background: #fff4d6; color: #6b4a00; }
+  .map-popup .pp-title { display: block; font-size: 0.98rem; margin-bottom: 2px; }
+  .map-popup .pp-meta { font-size: 0.8rem; color: #4a6070; }
+  .map-popup .pp-metric { display: inline-block; margin-top: 6px; font-weight: 700; font-size: 0.82rem; padding: 1px 8px; border-radius: 6px; background: #eef3f6; }
+  .map-popup .pp-desc { margin: 6px 0 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .map-popup .pp-note { margin-top: 6px; font-size: 0.78rem; font-style: italic; color: #6b4a00; }
+  .map-popup .pp-refs { list-style: none; padding: 0; margin: 8px 0 0; display: grid; gap: 4px; }
+  .map-popup .pp-refs a { color: #0a5c8f; font-weight: 600; overflow-wrap: anywhere; }
+  .map-popup .pp-refp { color: #4a6070; font-weight: 500; }
+  .map-popup .pp-list { list-style: none; padding: 0; margin: 8px 0 0; display: grid; gap: 4px; max-height: 240px; overflow: auto; }
+  .map-popup .pp-item { all: unset; display: grid; gap: 2px; width: 100%; box-sizing: border-box; padding: 8px; border-radius: 8px; cursor: pointer; }
+  .map-popup .pp-item:hover, .map-popup .pp-item:focus-visible { background: #eef3f6; outline: 2px solid #1b7fd1; }
+  .map-popup .pp-item .pp-src { justify-self: start; }
+</style>

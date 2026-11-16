@@ -1,70 +1,10 @@
 ---
-import Base from '../../layouts/Base.astro';
-import MapView from '../../components/MapView.astro';
-import ReportList from '../../components/ReportList.astro';
-import TypeLegend from '../../components/TypeLegend.astro';
+import ProvincePage from '../../components/pages/ProvincePage.astro';
 import { PROVINCES, type Province } from '../../lib/provinces';
-import { reportsByProvince } from '../../lib/data';
-import { REPORT_TYPES, SYSTEM_TYPES } from '../../lib/types';
-import { url } from '../../lib/url';
 
 export function getStaticPaths() {
   return PROVINCES.map((province) => ({ params: { slug: province.slug }, props: { province } }));
 }
 const { province } = Astro.props as { province: Province };
-const list = reportsByProvince(province.slug);
-const byType = [...REPORT_TYPES, ...SYSTEM_TYPES].map((t) => ({ ...t, n: list.filter((r) => r.type === t.id).length })).filter((t) => t.n > 0).sort((a, b) => b.n - a.n);
-const near = PROVINCES.filter((p) => p.slug !== province.slug)
-  .map((p) => ({ p, d: (p.lat - province.lat) ** 2 + (p.lng - province.lng) ** 2 }))
-  .sort((a, b) => a.d - b.d).slice(0, 6).map((x) => x.p);
-const site = Astro.site;
-const abs = (p: string) => (site ? new URL(url(p), site).href : url(p));
-const nSrc = (k: string) => list.filter((r) => r.source === k).length;
-const summary = list.length
-  ? `มีข้อมูล ${list.length} รายการ (ประชาชน ${nSrc('community')} · ข่าว ${nSrc('news')} · ข้อมูลทางการ ${nSrc('government')})${byType[0] ? ` ประเภทที่พบมากที่สุดคือ${byType[0].label}` : ''}`
-  : 'ยังไม่มีรายงานหรือข้อมูลอ้างอิง';
 ---
-<Base
-  title={`คุณภาพน้ำ ${province.name} — รายงานน้ำเสีย ปลาตาย น้ำเปลี่ยนสี`}
-  description={`${summary} ดูแผนที่และแจ้งเหตุคุณภาพน้ำผิดปกติใน${province.name}ได้ทันที`}
-  path={`/province/${province.slug}/`}
-  noindex={list.length === 0}
-  jsonLd={{ '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
-    { '@type': 'ListItem', position: 1, name: 'หน้าแรก', item: abs('/') },
-    { '@type': 'ListItem', position: 2, name: 'รายจังหวัด', item: abs('/province/') },
-    { '@type': 'ListItem', position: 3, name: province.name },
-  ] }}
->
-  <div class="wrap section">
-    <nav aria-label="breadcrumb" class="muted crumbs"><a href={url('/')}>หน้าแรก</a> › <a href={url('/province/')}>รายจังหวัด</a> › {province.name}</nav>
-    <h1>สถานการณ์คุณภาพน้ำ {province.name}</h1>
-    <p class="lead">{summary} ข้อมูลทั้งหมดมาจากประชาชนและยังไม่ผ่านการตรวจสอบ</p>
-    <p><a class="btn" href={url('/report/')}>📍 แจ้งเหตุใน{province.name}</a></p>
-
-    {list.length > 0 && (
-      <>
-        <h2>แผนที่</h2>
-        <MapView reports={list} center={[province.lng, province.lat]} zoom={8.5} height="420px" label={`แผนที่รายงานคุณภาพน้ำ ${province.name}`} />
-        <TypeLegend />
-        {byType.length > 0 && (
-          <>
-            <h2 style="margin-top:28px">แยกตามประเภท</h2>
-            <ul class="bytype">{byType.map((t) => <li class="card">{t.icon} {t.label}: <strong>{t.n}</strong></li>)}</ul>
-          </>
-        )}
-      </>
-    )}
-
-    <h2 style="margin-top:28px">รายงานล่าสุด</h2>
-    <ReportList reports={list} limit={20} showProvince={false} />
-
-    <h2 style="margin-top:28px">จังหวัดใกล้เคียง</h2>
-    <p>{near.map((p, i) => <><a href={url(`/province/${p.slug}/`)}>{p.name}</a>{i < near.length - 1 ? ' · ' : ''}</>)}</p>
-  </div>
-</Base>
-<style>
-  .crumbs { font-size: 0.9rem; margin-bottom: 12px; }
-  .lead { max-width: 65ch; }
-  .bytype { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 10px; }
-  .bytype .card { padding: 8px 16px; }
-</style>
+<ProvincePage lang="th" province={province} />

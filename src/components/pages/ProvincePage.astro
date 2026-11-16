@@ -1,0 +1,89 @@
+---
+import Base from '../../layouts/Base.astro';
+import Explorer from '../Explorer.astro';
+import { PROVINCES, type Province } from '../../lib/provinces';
+import { reportsByProvince, countBySource } from '../../lib/data';
+import { abs } from '../../lib/url';
+import { t, lurl, lpath, type Lang } from '../../lib/i18n';
+
+interface Props { lang: Lang; province: Province }
+const { lang, province } = Astro.props;
+const d = t(lang);
+const pname = lang === 'en' ? province.nameEn : province.name;
+const list = reportsByProvince(province.slug);
+const c = countBySource(list);
+const near = PROVINCES.filter((p) => p.slug !== province.slug)
+  .map((p) => ({ p, d: (p.lat - province.lat) ** 2 + (p.lng - province.lng) ** 2 }))
+  .sort((a, b) => a.d - b.d).slice(0, 6).map((x) => x.p);
+const ab = (p: string) => abs(lpath(lang, p), Astro.site);
+const copy = {
+  th: {
+    title: `คุณภาพน้ำ${pname} — ข้อมูลทางการ ข่าว และรายงานน้ำเสีย`,
+    summary: c.all ? `มีข้อมูล ${c.all} รายการ: ข้อมูลทางการ ${c.government} · ข่าว ${c.news} · ประชาชนรายงาน ${c.community}` : d.empty.province,
+    desc: `ดูแผนที่และแจ้งเหตุคุณภาพน้ำผิดปกติใน${pname}ได้ทันที`,
+    h1: `คุณภาพน้ำ${pname}`,
+    cta: `แจ้งเหตุใน${pname}`,
+    near: 'จังหวัดใกล้เคียง',
+    map: `แผนที่คุณภาพน้ำ ${pname}`,
+    list: 'ข้อมูลแยกตามแหล่ง',
+  },
+  en: {
+    title: `${pname} water quality — official readings, news and pollution reports`,
+    summary: c.all ? `${c.all} ${c.all === 1 ? 'item' : 'items'}: ${c.government} official · ${c.news} news · ${c.community} community` : d.empty.province,
+    desc: `See the map and report abnormal water quality in ${pname} in under a minute.`,
+    h1: `Water quality in ${pname}`,
+    cta: `Report an incident in ${pname}`,
+    near: 'Nearby provinces',
+    map: `Water quality map of ${pname}`,
+    list: 'Items by source',
+  },
+}[lang];
+---
+<Base
+  lang={lang}
+  title={copy.title}
+  description={`${copy.summary}. ${copy.desc}`}
+  path={`/province/${province.slug}/`}
+  noindex={list.length === 0}
+  jsonLd={{ '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
+    { '@type': 'ListItem', position: 1, name: d.home, item: ab('/') },
+    { '@type': 'ListItem', position: 2, name: d.nav.provinces, item: ab('/province/') },
+    { '@type': 'ListItem', position: 3, name: pname },
+  ] }}
+>
+  <div class="wrap section prov">
+    <nav aria-label={d.breadcrumb} class="crumbs"><ol>
+      <li><a href={lurl(lang, '/')}>{d.home}</a></li>
+      <li><a href={lurl(lang, '/province/')}>{d.nav.provinces}</a></li>
+      <li aria-current="page">{pname}</li>
+    </ol></nav>
+    <div class="prov-head">
+      <div>
+        <h1>{copy.h1}</h1>
+        <p class="lead muted">{copy.summary}</p>
+      </div>
+      <a class="btn accent header-only" href={lurl(lang, '/report/')}>{copy.cta}</a>
+    </div>
+
+    {list.length > 0 ? (
+      <Explorer lang={lang} items={list} center={[province.lng, province.lat]} zoom={8.5} label={copy.map} grouped showProvince={false} listTitle={copy.list} />
+    ) : (
+      <div class="card empty">
+        <span class="ico" aria-hidden="true">💧</span>
+        <p><strong>{d.empty.province}</strong></p>
+        <p>{d.empty.provinceCta}</p>
+        <a class="btn accent" href={lurl(lang, '/report/')}>{copy.cta}</a>
+      </div>
+    )}
+
+    <h2 class="near-h">{copy.near}</h2>
+    <ul class="near">{near.map((p) => <li><a class="btn secondary small" href={lurl(lang, `/province/${p.slug}/`)}>{lang === 'en' ? p.nameEn : p.name}</a></li>)}</ul>
+  </div>
+</Base>
+<style>
+  .prov-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--sp-3); margin-bottom: var(--sp-4); }
+  .prov-head .lead { margin: 0; }
+  .near-h { margin-top: var(--sp-6); font-size: var(--fs-lg); }
+  .near { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+  @media (max-width: 860px) { .header-only { display: none; } }
+</style>

@@ -30,3 +30,10 @@ Static HTML, Thai metadata, canonical, OG, JSON-LD (WebSite, FAQPage, Breadcrumb
 
 ## Privacy / PDPA
 Notice states purpose (spam/security), retention (30/180/180 d), access (admins only), contact. Needs legal review.
+
+## Front end v3 (Clearwater Watch)
+- Product name: **Clearwater Watch** (Thai tagline "แผนที่เฝ้าระวังคุณภาพน้ำของประเทศไทย"). Single source: `SITE_NAME` / `SITE_TAGLINE` in `src/lib/types.ts`.
+- Languages: Thai (default, existing URLs) and English under `/en/` (home, report, provinces, guide, about, privacy). Dictionary: `src/lib/i18n.ts`; pages are shared components in `src/components/pages/` with a `lang` prop. `hreflang` th/en/x-default (= Thai), per-language canonical, sitemap with i18n alternates. `/admin/` is English-only and noindex.
+- Three sources with distinct marker shape + colour: Official (square, PCD WQI via data.go.th, Open Data Common), News (diamond, with article links), Community (circle, "Unverified"). Filter chips filter map and list client-side (data is embedded in the page; no extra requests).
+- Stats are source-aware: time windows apply to community reports only; news and official items show totals with their latest date/year.
+- Report flow: type → location (GPS or map pick, province suggested) → send; time defaults to now and details are optional (collapsed). API contract unchanged.

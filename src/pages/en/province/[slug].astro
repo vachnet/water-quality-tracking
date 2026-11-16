@@ -1,0 +1,10 @@
+---
+import ProvincePage from '../../../components/pages/ProvincePage.astro';
+import { PROVINCES, type Province } from '../../../lib/provinces';
+
+export function getStaticPaths() {
+  return PROVINCES.map((province) => ({ params: { slug: province.slug }, props: { province } }));
+}
+const { province } = Astro.props as { province: Province };
+---
+<ProvincePage lang="en" province={province} />

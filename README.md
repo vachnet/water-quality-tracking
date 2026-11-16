@@ -1,4 +1,4 @@
-# น้ำใส ใจรัก — Community Water Quality Reporting
+# Clearwater Watch — Community Water Quality Reporting
 
 Static site (Astro, GitHub Pages) + one Firebase Cloud Function for submissions. No accounts, no photos, no pre-moderation.
 Name is a placeholder: change `SITE_NAME` in `src/lib/types.ts`.

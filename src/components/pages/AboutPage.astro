@@ -1,0 +1,59 @@
+---
+import Base from '../../layouts/Base.astro';
+import AboutData from '../AboutData.astro';
+import { SITE_NAME } from '../../lib/types';
+import { t, lurl, type Lang } from '../../lib/i18n';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const d = t(lang);
+const c = {
+  th: {
+    title: 'เกี่ยวกับโครงการ',
+    description: `${SITE_NAME} คือแผนที่เปิดที่รวมข้อมูลคุณภาพน้ำทางการ ข่าว และรายงานจากประชาชน ให้ทุกคนช่วยกันเฝ้าระวังแหล่งน้ำโดยไม่ต้องสมัครสมาชิก`,
+    intro: `${SITE_NAME} เป็นแผนที่ให้ประชาชนช่วยกันเฝ้าระวังคุณภาพน้ำ โดยรวมข้อมูลทางการ ข่าว และรายงานจากผู้ใช้ไว้ในที่เดียว และลดขั้นตอนการแจ้งเหตุให้เหลือน้อยที่สุด ไม่ต้องสมัครสมาชิก และไม่บังคับแนบรูปภาพ`,
+    pH: 'หลักการ',
+    p: [
+      ['รายงานง่าย', 'ต้องการเพียงประเภท ตำแหน่ง และเวลา'],
+      ['โปร่งใสเรื่องที่มา', 'ทุกรายการแสดงแหล่งที่มา ข่าวมีลิงก์ต้นทาง รายงานจากประชาชนติดป้าย "ยังไม่ยืนยัน"'],
+      ['ป้องกันการก่อกวน', 'ระบบอัตโนมัติ จำกัดความถี่ และตรวจย้อนหลังเฉพาะรายงานที่ถูกตั้งธง'],
+      ['ความเป็นส่วนตัว', 'ไม่เปิดเผย IP ต่อสาธารณะ'],
+    ],
+    privacy: 'ดูนโยบายความเป็นส่วนตัว',
+    limH: 'ข้อจำกัด',
+    lim: 'รายงานจากประชาชนไม่ใช่ผลวิเคราะห์ทางห้องปฏิบัติการ ค่าดัชนีทางการเป็นค่ารายปี และไม่ควรใช้ข้อมูลบนเว็บนี้แทนข้อมูลจากหน่วยงานที่รับผิดชอบ',
+  },
+  en: {
+    title: 'About the project',
+    description: `${SITE_NAME} is an open map that brings together official water quality data, news and community reports so anyone in Thailand can help watch over local waters — no account needed.`,
+    intro: `${SITE_NAME} is a map that helps people in Thailand keep an eye on water quality. It brings official data, news and visitor reports together in one place, and keeps reporting as simple as possible — no account and no photo required.`,
+    pH: 'Principles',
+    p: [
+      ['Easy to report', 'Only the type, location and time are needed.'],
+      ['Clear about sources', 'Every item shows where it came from; news links to the original articles; community reports are labelled "Unverified".'],
+      ['Spam protection', 'Automatic checks and rate limits; only flagged reports are reviewed afterwards.'],
+      ['Privacy', 'IP addresses are never shown publicly.'],
+    ],
+    privacy: 'Read the privacy policy',
+    limH: 'Limitations',
+    lim: 'Community reports are not laboratory results, official index values are yearly, and nothing on this site replaces information from the responsible authorities.',
+  },
+}[lang];
+---
+<Base lang={lang} title={c.title} description={c.description} path="/about/">
+  <div class="wrap section">
+    <article class="prose">
+      <nav aria-label={d.breadcrumb} class="crumbs"><ol><li><a href={lurl(lang, '/')}>{d.home}</a></li><li aria-current="page">{d.nav.about}</li></ol></nav>
+      <h1>{c.title}</h1>
+      <p class="lead">{c.intro}</p>
+      <h2>{c.pH}</h2>
+      <ul>{c.p.map(([h, x]) => <li><strong>{h}:</strong> {x}</li>)}</ul>
+      <p><a href={lurl(lang, '/privacy/')}>{c.privacy} →</a></p>
+    </article>
+    <div class="ad"><AboutData lang={lang} /></div>
+    <article class="prose">
+      <h2>{c.limH}</h2>
+      <p>{c.lim}</p>
+    </article>
+  </div>
+</Base>
+<style>.ad { margin-block: var(--sp-6); }</style>

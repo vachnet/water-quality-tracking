@@ -1,0 +1,181 @@
+---
+import Base from '../../layouts/Base.astro';
+import Explorer from '../Explorer.astro';
+import AboutData from '../AboutData.astro';
+import { reports, stats, generatedAt, isDemo } from '../../lib/data';
+import { fmtDate, fmtDateTime, timeAgo, beYear } from '../../lib/format';
+import { t, lurl, type Lang } from '../../lib/i18n';
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const d = t(lang);
+const s = stats();
+
+const copy = {
+  th: {
+    title: 'แผนที่คุณภาพน้ำประเทศไทย — ดูและแจ้งน้ำเสีย ปลาตาย น้ำเปลี่ยนสี',
+    description: 'ดูข้อมูลคุณภาพน้ำทั่วประเทศไทยบนแผนที่ ทั้งค่าดัชนีทางการ ข่าว และรายงานจากประชาชน แจ้งเหตุน้ำเสีย ปลาตาย น้ำเปลี่ยนสีได้ทันทีโดยไม่ต้องสมัครสมาชิก',
+    h1a: 'เห็นน้ำผิดปกติ?',
+    h1b: 'แจ้งได้ใน 1 นาที',
+    lead: 'ดูข้อมูลคุณภาพน้ำใกล้บ้านคุณบนแผนที่ และช่วยกันแจ้งเมื่อพบน้ำเน่าเสีย ปลาตาย หรือคราบน้ำมัน ไม่ต้องสมัครสมาชิก',
+    seeMap: 'ดูแผนที่',
+    how: 'แจ้งเหตุง่าย ๆ 3 ขั้นตอน',
+    steps: [
+      ['เลือกสิ่งที่เห็น', 'ปลาตาย น้ำเปลี่ยนสี กลิ่นเหม็น คราบน้ำมัน ขยะ หรืออื่น ๆ'],
+      ['บอกตำแหน่ง', 'กดปุ่มใช้ตำแหน่งปัจจุบัน หรือแตะบนแผนที่ ระบบเลือกจังหวัดให้'],
+      ['กดส่ง', 'เวลาตั้งเป็น "ตอนนี้" ให้อัตโนมัติ ใส่รายละเอียดหรือไม่ก็ได้'],
+    ],
+    faqH: 'คำถามที่พบบ่อย',
+    faqs: [
+      ['ต้องสมัครสมาชิกก่อนแจ้งเหตุหรือไม่?', 'ไม่ต้อง คุณสามารถแจ้งเหตุได้ทันที โดยระบุเพียงประเภทเหตุการณ์ ตำแหน่ง และเวลาที่พบ'],
+      ['ทำไมบางรายการขึ้นว่า "ยังไม่ยืนยัน"?', 'รายงานจากประชาชนเผยแพร่ทันทีโดยไม่ผ่านการตรวจสอบก่อน จึงเป็นข้อมูลเฝ้าระวังเบื้องต้น ส่วนข้อมูลข่าวและข้อมูลทางการจะแสดงพร้อมลิงก์ที่มา'],
+      ['ข้อมูล "ทางการ" มาจากไหน?', 'มาจากดัชนีคุณภาพน้ำผิวดินรายปีของกรมควบคุมมลพิษ ผ่าน data.go.th เป็นค่ารายปี ไม่ใช่สถานการณ์ ณ วันนี้'],
+      ['ข้อมูลของฉันถูกเก็บอะไรบ้าง?', 'เก็บข้อมูลที่คุณกรอก และที่อยู่ IP เพื่อป้องกันสแปม โดยไม่เปิดเผย IP ต่อสาธารณะ และลบอัตโนมัติตามระยะเวลาที่กำหนดในนโยบายความเป็นส่วนตัว'],
+      ['แผนที่อัปเดตบ่อยแค่ไหน?', 'ข้อมูลบนเว็บอัปเดตอัตโนมัติทุกชั่วโมง'],
+    ],
+  },
+  en: {
+    title: 'Thailand water quality map — see and report pollution, fish kills, discoloured water',
+    description: 'See water quality across Thailand on one map — official index readings, news incidents and community reports — and report pollution, fish kills or discoloured water in under a minute, no account needed.',
+    h1a: 'Seen something wrong with the water?',
+    h1b: 'Report it in a minute.',
+    lead: 'See water quality near you on the map, and let others know when you spot polluted water, dead fish or oil. No account needed.',
+    seeMap: 'See the map',
+    how: 'Reporting takes 3 simple steps',
+    steps: [
+      ['Pick what you saw', 'Dead fish, discoloured water, a bad smell, oil, trash or something else.'],
+      ['Share the location', 'Tap "use my location" or tap the map. We fill in the province for you.'],
+      ['Send', 'The time is set to "now" for you. Details are optional.'],
+    ],
+    faqH: 'Frequently asked questions',
+    faqs: [
+      ['Do I need an account to report?', 'No. You can report straight away with just the type of incident, the location and the time.'],
+      ['Why are some items marked "Unverified"?', 'Community reports are published immediately without checks, so they are early warnings only. News and official items are shown with links to their sources.'],
+      ['Where does the "Official" data come from?', 'From the Pollution Control Department’s yearly surface Water Quality Index, published on data.go.th. These are yearly values, not today’s conditions.'],
+      ['What data do you keep about me?', 'What you type in, plus your IP address to prevent spam. Your IP is never shown publicly and is deleted automatically on the schedule in the privacy policy.'],
+      ['How often is the map updated?', 'The site refreshes its data automatically every hour.'],
+    ],
+  },
+}[lang];
+
+const govYear = s.govLatestYear ? beYear(s.govLatestYear, lang) : undefined;
+const strip = [
+  { n: s.community7d, label: d.stats.community7d, sub: d.stats.community24h(s.community24h), src: 'community' },
+  { n: s.news, label: d.stats.news, sub: s.newsLatest ? d.stats.newsLatest(fmtDate(s.newsLatest, lang)) : d.stats.none, src: 'news' },
+  { n: s.gov, label: d.stats.gov, sub: govYear ? d.stats.govYear(govYear) : d.stats.none, src: 'government' },
+  { n: s.provinces, label: d.stats.provinces, sub: d.stats.provincesOf, src: '' },
+];
+---
+<Base
+  lang={lang}
+  title={copy.title}
+  description={copy.description}
+  path="/"
+  jsonLd={{
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    inLanguage: lang === 'th' ? 'th-TH' : 'en',
+    mainEntity: copy.faqs.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })),
+  }}
+>
+  <section class="hero">
+    <div class="wrap hero-in">
+      <div class="hero-copy">
+        <h1><span>{copy.h1a}</span> <span class="h1b">{copy.h1b}</span></h1>
+        <p class="lead">{copy.lead}</p>
+        <div class="hero-cta">
+          <a class="btn accent big" href={lurl(lang, '/report/')}>{d.reportCtaLong}</a>
+          <a class="btn ghost-light big" href="#map">{copy.seeMap} ↓</a>
+        </div>
+        {isDemo && <p class="notice demo">{d.demo}</p>}
+      </div>
+      <dl class="strip" aria-label={d.stats.label}>
+        {strip.map((x) => (
+          <div class:list={['stat', x.src && `src-${x.src}`]}>
+            <dt>{x.label}</dt>
+            <dd><span class="num">{x.n}</span><span class="sub">{x.sub}</span></dd>
+          </div>
+        ))}
+      </dl>
+      <p class="live small"><span class="pulse" aria-hidden="true"></span>{d.stats.updated} <time datetime={generatedAt} title={fmtDateTime(generatedAt, lang)} data-ago>{timeAgo(generatedAt, lang)}</time></p>
+    </div>
+  </section>
+
+  <section class="wrap map-sec" id="map" aria-label={d.map.label}>
+    <Explorer lang={lang} items={reports} />
+    <p class="more"><a href={lurl(lang, '/province/')}>{d.explorer.more} →</a></p>
+  </section>
+
+  <section class="wrap section">
+    <AboutData lang={lang} />
+  </section>
+
+  <section class="wrap section">
+    <h2>{copy.how}</h2>
+    <ol class="steps">
+      {copy.steps.map(([h, p], i) => (
+        <li class="card"><span class="step-n" aria-hidden="true">{i + 1}</span><h3>{h}</h3><p class="muted">{p}</p></li>
+      ))}
+    </ol>
+    <p><a class="btn accent" href={lurl(lang, '/report/')}>{d.reportCtaLong}</a></p>
+  </section>
+
+  <section class="wrap section">
+    <h2>{copy.faqH}</h2>
+    <div class="faq">
+      {copy.faqs.map(([q, a]) => (
+        <details class="card"><summary>{q}</summary><p>{a}</p></details>
+      ))}
+    </div>
+  </section>
+</Base>
+
+<style>
+  .hero { position: relative; color: #fff; background: radial-gradient(1200px 400px at 85% -10%, rgb(14 143 184 / 0.55), transparent 60%), linear-gradient(160deg, var(--hero-1), var(--hero-2)); padding-block: var(--sp-5) var(--sp-4); }
+  .hero-in { display: grid; gap: var(--sp-4); }
+  .hero h1 { font-size: clamp(1.7rem, 4.2vw, 2.5rem); margin: 0 0 var(--sp-2); max-width: 28ch; }
+  .hero .h1b { color: #9fe3ff; display: inline-block; }
+  .hero .lead { font-size: var(--fs-lg); max-width: 56ch; opacity: 0.92; margin-bottom: var(--sp-4); }
+  .hero-cta { display: flex; flex-wrap: wrap; gap: var(--sp-3); }
+  .hero .btn.accent { background: #ff7a4d; color: #1d0a02; box-shadow: 0 6px 20px rgb(255 122 77 / 0.35); }
+  .hero .btn.accent:hover { background: #ff9670; color: #1d0a02; }
+  .btn.ghost-light { background: rgb(255 255 255 / 0.08); color: #fff; border-color: rgb(255 255 255 / 0.35); }
+  .btn.ghost-light:hover { background: rgb(255 255 255 / 0.16); color: #fff; }
+  .demo { margin: var(--sp-3) 0 0; display: inline-block; }
+  .strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--sp-3); margin: var(--sp-2) 0 0; }
+  .stat { background: rgb(255 255 255 / 0.08); border: 1px solid rgb(255 255 255 / 0.14); border-radius: var(--r-lg); padding: var(--sp-3) var(--sp-4); animation: rise 0.5s var(--ease) both; }
+  .stat:nth-child(2) { animation-delay: 60ms; } .stat:nth-child(3) { animation-delay: 120ms; } .stat:nth-child(4) { animation-delay: 180ms; }
+  .stat dt { font-size: var(--fs-xs); opacity: 0.85; font-weight: 600; }
+  .stat dd { margin: 0; display: grid; }
+  .stat .num { font-size: 1.75rem; font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; }
+  .stat .sub { font-size: var(--fs-xs); opacity: 0.75; }
+  .stat.src-government { box-shadow: inset 3px 0 0 #9aa9ff; } .stat.src-news { box-shadow: inset 3px 0 0 #f6b35c; } .stat.src-community { box-shadow: inset 3px 0 0 #5fd3c4; }
+  .live { display: inline-flex; align-items: center; gap: 8px; margin: 0; opacity: 0.85; }
+  .pulse { width: 8px; height: 8px; border-radius: 50%; background: #62d49b; animation: pulse 2s infinite; --ok: #62d49b; }
+  .map-sec { margin-top: var(--sp-5); }
+  .more { margin: var(--sp-3) 0 0; font-weight: 600; }
+  .steps { list-style: none; padding: 0; margin: 0 0 var(--sp-5); display: grid; gap: var(--sp-4); grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  .steps .card { position: relative; }
+  .step-n { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--primary-soft); color: var(--primary); font-weight: 700; margin-bottom: var(--sp-3); }
+  .steps p { margin: 0; }
+  .faq { display: grid; gap: var(--sp-3); max-width: 780px; }
+  .faq details { padding: 0; }
+  .faq summary { cursor: pointer; font-weight: 600; padding: var(--sp-4) var(--sp-5); min-height: var(--tap); list-style: none; display: flex; justify-content: space-between; gap: var(--sp-3); }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary::after { content: '+'; font-size: 1.3rem; line-height: 1; color: var(--primary); transition: transform 0.2s; }
+  .faq details[open] summary::after { transform: rotate(45deg); }
+  .faq p { margin: 0; padding: 0 var(--sp-5) var(--sp-4); color: var(--muted); }
+  @media (max-width: 860px) {
+    .hero { padding-block: var(--sp-5) var(--sp-4); }
+    .hero .lead { font-size: var(--fs-md); }
+    .hero-cta .btn.accent { display: none; } /* the sticky bottom bar is the one Report button on phones */
+    .hero h1 { font-size: 1.6rem; }
+    .strip { display: flex; overflow-x: auto; gap: var(--sp-2); margin-inline: -16px; padding-inline: 16px; scrollbar-width: none; }
+    .stat { flex: 0 0 auto; min-width: 150px; padding: var(--sp-2) var(--sp-3); }
+    .stat .num { font-size: 1.3rem; }
+  }
+  @media (max-width: 560px) {
+    .hero .lead { display: none; }
+    .hero-cta { display: none; }
+  }
+</style>

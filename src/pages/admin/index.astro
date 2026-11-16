@@ -1,13 +1,13 @@
 ---
 import Base from '../../layouts/Base.astro';
 ---
-<Base title="Admin — Abuse monitoring" description="Admin abuse dashboard" path="/admin/" noindex>
+<Base lang="en" title="Admin — Abuse monitoring" description="Admin abuse dashboard" path="/admin/" noindex alternates={false} hideReportBar>
   <div class="wrap section">
     <h1>Abuse monitoring</h1>
     <p id="mode" class="notice" hidden></p>
 
     <div id="signin" class="card" hidden>
-      <p>ต้องเข้าสู่ระบบด้วยบัญชีผู้ดูแล (Firebase Auth custom claim <code>admin</code>)</p>
+      <p>Sign in with an administrator account (Firebase Auth custom claim <code>admin</code>).</p>
       <button class="btn" id="signin-btn">Sign in with Google</button>
     </div>
 
@@ -25,7 +25,7 @@ import Base from '../../layouts/Base.astro';
           </table>
         </div>
         <p class="muted" style="margin:12px 0 0;font-size:0.88rem">
-          IP จริงแสดงเฉพาะผู้ดูแลที่ได้รับอนุญาต และหายไปหลัง 30 วัน (เหลือเพียงค่าแฮช) · การบล็อกเป็นแบบชั่วคราวเสมอ และถูกบันทึกใน audit log
+          Raw IPs are visible to authorised admins only and disappear after 30 days (only the hash remains). Blocks are always temporary and recorded in the audit log.
         </p>
       </div>
       <p id="msg" role="status" aria-live="polite" class="muted"></p>
@@ -93,7 +93,7 @@ import Base from '../../layouts/Base.astro';
         b.style.marginRight = '6px';
         b.onclick = async () => {
           b.disabled = true;
-          try { await fn(); } catch { say('ดำเนินการไม่สำเร็จ'); }
+          try { await fn(); } catch { say('Action failed'); }
           b.disabled = false;
         };
         act.append(b);
@@ -101,18 +101,18 @@ import Base from '../../layouts/Base.astro';
       if (r.blocked) {
         mk('Unblock', 'secondary', async () => {
           if (!demo) await call('/unblock', { method: 'POST', body: JSON.stringify({ ipHash: r.ipHash }) });
-          r.blocked = false; render(rows, today, demo); say('ยกเลิกการบล็อกแล้ว');
+          r.blocked = false; render(rows, today, demo); say('Unblocked');
         });
       } else {
         mk('Block 24h', 'danger', async () => {
           if (!demo) await call('/block', { method: 'POST', body: JSON.stringify({ ipHash: r.ipHash, hours: 24, reason: 'manual' }) });
-          r.blocked = true; render(rows, today, demo); say('บล็อก 24 ชั่วโมงแล้ว');
+          r.blocked = true; render(rows, today, demo); say('Blocked for 24 hours');
         });
       }
       mk('Hide all reports', 'secondary', async () => {
-        if (!confirm('ซ่อนรายงานทั้งหมดจาก IP นี้?')) return;
+        if (!confirm('Hide all reports from this IP?')) return;
         const res = demo ? { updated: r.reports24h } : await call('/hide', { method: 'POST', body: JSON.stringify({ ipHash: r.ipHash, status: 'hidden' }) });
-        say(`ซ่อน ${res.updated} รายงานแล้ว`);
+        say(`Hid ${res.updated} reports`);
       });
       tr.append(act);
       tb.append(tr);
@@ -127,7 +127,7 @@ import Base from '../../layouts/Base.astro';
   if (!API) {
     const m = $('mode');
     m.hidden = false;
-    m.textContent = 'โหมดทดลอง: ข้อมูลด้านล่างเป็นข้อมูลสมมติ ยังไม่ได้เชื่อมต่อ Admin API';
+    m.textContent = 'Demo mode: the data below is mock data; no Admin API is connected.';
     show('dash');
     render(demoRows, 128, true);
   } else {
@@ -144,7 +144,7 @@ import Base from '../../layouts/Base.astro';
         show('signin', false);
         show('dash');
       } catch {
-        say('เข้าสู่ระบบไม่สำเร็จ หรือบัญชีนี้ไม่มีสิทธิ์ผู้ดูแล');
+        say('Sign-in failed, or this account is not an administrator.');
         show('dash');
       }
     });

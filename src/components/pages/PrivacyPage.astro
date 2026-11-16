@@ -1,0 +1,66 @@
+---
+import Base from '../../layouts/Base.astro';
+import { SITE_NAME } from '../../lib/types';
+import { t, lurl, type Lang } from '../../lib/i18n';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const d = t(lang);
+---
+<Base lang={lang} title={lang === 'th' ? 'นโยบายความเป็นส่วนตัว' : 'Privacy policy'}
+  description={lang === 'th' ? `ข้อมูลที่ ${SITE_NAME} เก็บเมื่อคุณส่งรายงาน เหตุผล ระยะเวลาจัดเก็บ และสิทธิ์ของคุณ` : `What ${SITE_NAME} collects when you send a report, why, how long it is kept, and your rights.`}
+  path="/privacy/">
+  <article class="wrap section prose">
+    <nav aria-label={d.breadcrumb} class="crumbs"><ol><li><a href={lurl(lang, '/')}>{d.home}</a></li><li aria-current="page">{d.footer.privacy}</li></ol></nav>
+    {lang === 'th' ? (
+      <>
+        <h1>นโยบายความเป็นส่วนตัว</h1>
+        <p class="notice">ฉบับร่างสำหรับการพัฒนา ควรให้ผู้เชี่ยวชาญด้านกฎหมายตรวจสอบความสอดคล้องกับ พ.ร.บ.คุ้มครองข้อมูลส่วนบุคคล (PDPA) ก่อนเปิดใช้งานจริง และกรอกข้อมูลผู้ควบคุมข้อมูลให้ครบ</p>
+        <p>นโยบายนี้อธิบายข้อมูลที่ {SITE_NAME} เก็บเมื่อคุณส่งรายงาน</p>
+        <h2>ข้อมูลที่เราเก็บ</h2>
+        <ul>
+          <li>ข้อมูลรายงาน: ประเภทเหตุการณ์ ตำแหน่ง เวลา จังหวัด และรายละเอียด (ถ้ามี) — แสดงต่อสาธารณะ</li>
+          <li>ข้อมูลทางเทคนิคของการส่ง: ที่อยู่ IP, ค่าแฮชของ IP, User-Agent, คะแนนความเสี่ยง — <strong>ไม่แสดงต่อสาธารณะ</strong></li>
+        </ul>
+        <h2>วัตถุประสงค์</h2>
+        <p>เก็บ IP เพื่อป้องกันสแปม การก่อกวน และรักษาความปลอดภัยของระบบเท่านั้น ไม่ใช้เพื่อระบุตัวตนหรือโฆษณา</p>
+        <h2>ระยะเวลาจัดเก็บ</h2>
+        <table>
+          <thead><tr><th>ข้อมูล</th><th>ระยะเวลา</th></tr></thead>
+          <tbody><tr><td>IP จริง</td><td>30 วัน</td></tr><tr><td>IP แฮช (HMAC)</td><td>180 วัน</td></tr><tr><td>บันทึกการบล็อก</td><td>180 วัน</td></tr></tbody>
+        </table>
+        <p>ลบอัตโนมัติเมื่อครบกำหนด เว้นแต่มีเหตุตามกฎหมายหรือเหตุด้านความปลอดภัยที่ต้องเก็บต่อ</p>
+        <h2>ผู้เข้าถึงข้อมูล</h2>
+        <p>IP จริงเข้าถึงได้เฉพาะผู้ดูแลที่ได้รับอนุญาต ระบบอัตโนมัติใช้เฉพาะค่าแฮช</p>
+        <h2>สิทธิ์ของคุณ</h2>
+        <p>คุณมีสิทธิ์ขอเข้าถึง แก้ไข หรือลบข้อมูลตาม PDPA ติดต่อ: [ใส่อีเมลผู้ควบคุมข้อมูล]</p>
+        <h2>คุกกี้และบริการภายนอก</h2>
+        <p>เว็บไซต์ใช้ Cloudflare Turnstile เพื่อตรวจสอบว่าผู้ใช้ไม่ใช่บอท และแผนที่ดึงภาพแผนที่จากผู้ให้บริการแผนที่ ซึ่งอาจได้รับ IP ของคุณตามปกติของการโหลดเนื้อหา</p>
+      </>
+    ) : (
+      <>
+        <h1>Privacy policy</h1>
+        <p class="notice">Development draft. Have it reviewed for compliance with Thailand’s Personal Data Protection Act (PDPA) and fill in the data controller details before going live. The Thai version is the reference text.</p>
+        <p>This policy explains what {SITE_NAME} collects when you send a report.</p>
+        <h2>What we collect</h2>
+        <ul>
+          <li>Report data: incident type, location, time, province and details (if any) — shown publicly.</li>
+          <li>Technical data about the submission: IP address, a hash of the IP, User-Agent and a risk score — <strong>never shown publicly</strong>.</li>
+        </ul>
+        <h2>Why</h2>
+        <p>The IP address is kept only to prevent spam and abuse and to keep the system secure. It is not used to identify you or for advertising.</p>
+        <h2>How long we keep it</h2>
+        <table>
+          <thead><tr><th>Data</th><th>Retention</th></tr></thead>
+          <tbody><tr><td>Raw IP address</td><td>30 days</td></tr><tr><td>Hashed IP (HMAC)</td><td>180 days</td></tr><tr><td>Block records</td><td>180 days</td></tr></tbody>
+        </table>
+        <p>Data is deleted automatically when the period ends, unless the law or a security incident requires keeping it longer.</p>
+        <h2>Who can access it</h2>
+        <p>Only authorised administrators can see raw IP addresses. Automated checks use the hash only.</p>
+        <h2>Your rights</h2>
+        <p>Under the PDPA you may ask to access, correct or delete your data. Contact: [data controller email]</p>
+        <h2>Cookies and third-party services</h2>
+        <p>The site uses Cloudflare Turnstile to check that you are not a bot, and the map loads tiles from a map provider, which receives your IP address as part of normal content loading.</p>
+      </>
+    )}
+  </article>
+</Base>
