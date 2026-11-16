@@ -1,0 +1,48 @@
+name: Scout sources (every 12 h)
+
+on:
+  schedule:
+    - cron: '17 */12 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: scout
+  cancel-in-progress: false
+
+jobs:
+  scout:
+    runs-on: ubuntu-latest
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }} # empty => LLM steps are skipped
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - name: Prefilter (no LLM tokens)
+        id: scout
+        run: |
+          node scripts/scout.mjs
+          echo "n=$(node -p "require('./data/scout/candidates.json').candidates.length")" >> "$GITHUB_OUTPUT"
+      - name: Haiku extraction (only when there are new relevant articles)
+        if: steps.scout.outputs.n != '0' && env.ANTHROPIC_API_KEY != ''
+        run: node scripts/scout-llm.mjs
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      - name: Validate, merge, upsert to Firestore
+        if: steps.scout.outputs.n != '0' && env.ANTHROPIC_API_KEY != ''
+        run: node scripts/scout-ingest.mjs --seed
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+      - name: Save state and curated data
+        run: |
+          git add data/scout/state.json data/curated-reports.json
+          git diff --cached --quiet && exit 0
+          git config user.name "water-scout[bot]"
+          git config user.email "actions@users.noreply.github.com"
+          git commit -m "scout: update curated sources and state"
+          git pull --rebase -q && git push -q
