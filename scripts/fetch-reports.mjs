@@ -12,27 +12,35 @@ async function fromFirestore() {
   const { getFirestore, Timestamp } = await import('firebase-admin/firestore');
   initializeApp({ credential: cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)) });
   const since = Timestamp.fromMillis(Date.now() - WINDOW_DAYS * 86400000);
-  const snap = await getFirestore()
-    .collection('reports')
-    .where('status', 'in', ['unverified', 'flagged'])
-    .where('occurredAt', '>=', since)
-    .orderBy('occurredAt', 'desc')
-    .limit(MAX_REPORTS)
-    .get();
+  const db = getFirestore();
+  // Community reports: recent window only. Curated sources (government, news): kept regardless of age.
+  const [community, curated] = await Promise.all([
+    db.collection('reports').where('status', 'in', ['unverified', 'flagged']).where('occurredAt', '>=', since)
+      .orderBy('occurredAt', 'desc').limit(MAX_REPORTS).get(),
+    db.collection('reports').where('source', 'in', ['government', 'news']).limit(1000).get(),
+  ]);
   // Public fields only. Never copy IP or submission metadata here.
-  return snap.docs.map((d) => {
-    const r = d.data();
-    return {
-      id: d.id,
-      type: r.type,
-      lat: r.lat,
-      lng: r.lng,
-      province: r.province,
-      occurredAt: r.occurredAt.toDate().toISOString(),
-      ...(r.description ? { description: r.description } : {}),
-      status: r.status,
-    };
-  });
+  return [...community.docs, ...curated.docs]
+    .filter((d) => d.get('status') !== 'hidden')
+    .map((d) => {
+      const r = d.data();
+      return {
+        id: d.id,
+        source: r.source ?? 'community',
+        type: r.type,
+        lat: r.lat,
+        lng: r.lng,
+        province: r.province,
+        occurredAt: r.occurredAt.toDate().toISOString(),
+        status: r.status,
+        ...(r.title ? { title: r.title } : {}),
+        ...(r.description ? { description: r.description } : {}),
+        ...(r.locationPrecision ? { locationPrecision: r.locationPrecision } : {}),
+        ...(r.metrics ? { metrics: r.metrics } : {}),
+        ...(r.references ? { references: r.references } : {}),
+      };
+    })
+    .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt));
 }
 
 function demo() {
@@ -57,6 +65,7 @@ function demo() {
       province,
       occurredAt: new Date(Date.now() - rnd() * 20 * 86400000).toISOString(),
       ...(note ? { description: note } : {}),
+      source: 'community',
       status: rnd() > 0.9 ? 'flagged' : 'unverified',
     };
   }).sort((a, b) => b.occurredAt.localeCompare(a.occurredAt));

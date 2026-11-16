@@ -1,6 +1,6 @@
 // Client-only. MapLibre is imported lazily so it never blocks first paint.
 import type { Map as MLMap, GeoJSONSource } from 'maplibre-gl';
-import { REPORT_TYPES, typeById, type Report } from './types';
+import { REPORT_TYPES, SYSTEM_TYPES, SOURCE_LABEL, typeById, type Report } from './types';
 import { thaiDate } from './format';
 
 const STYLE_URL = import.meta.env.PUBLIC_MAP_STYLE_URL as string | undefined;
@@ -28,26 +28,43 @@ export interface MapOptions {
   onPick?: (lng: number, lat: number) => void;
 }
 
-const typeColor = ['match', ['get', 'type'], ...REPORT_TYPES.flatMap((t) => [t.id, t.color]), '#5f6b7a'];
+const typeColor = ['match', ['get', 'type'], ...[...REPORT_TYPES, ...SYSTEM_TYPES].flatMap((t) => [t.id, t.color]), '#5f6b7a'];
 
 function popupContent(r: Report): HTMLElement {
   const t = typeById(r.type);
   const box = document.createElement('div');
   box.className = 'map-popup';
   const h = document.createElement('strong');
-  h.textContent = `${t.icon} ${t.label}`;
-  const when = document.createElement('div');
-  when.className = 'when';
-  when.textContent = thaiDate(r.occurredAt);
-  box.append(h, when);
+  h.textContent = r.title ?? `${t.icon} ${t.label}`;
+  const src = document.createElement('div');
+  src.className = 'when';
+  src.textContent = `${SOURCE_LABEL[r.source ?? 'community'].badge} · ${thaiDate(r.occurredAt)}`;
+  box.append(h, src);
   if (r.description) {
     const d = document.createElement('p');
-    d.textContent = r.description; // user content: textContent only, never innerHTML
+    d.textContent = r.description; // user/news content: textContent only, never innerHTML
     box.append(d);
   }
-  const s = document.createElement('small');
-  s.textContent = 'ยังไม่ผ่านการตรวจสอบ';
-  box.append(s);
+  if (r.locationPrecision && r.locationPrecision !== 'exact') {
+    const n = document.createElement('small');
+    n.textContent = 'ตำแหน่งโดยประมาณ';
+    box.append(n);
+  }
+  for (const ref of r.references ?? []) {
+    if (!/^https?:\/\//.test(ref.url)) continue;
+    const a = document.createElement('a');
+    a.href = ref.url;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.textContent = `↗ ${ref.name}`;
+    a.style.display = 'block';
+    box.append(a);
+  }
+  if (r.source === 'community' || !r.source) {
+    const s = document.createElement('small');
+    s.textContent = 'ยังไม่ผ่านการตรวจสอบ';
+    box.append(s);
+  }
   return box;
 }
 

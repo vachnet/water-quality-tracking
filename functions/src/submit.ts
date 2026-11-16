@@ -119,7 +119,7 @@ export const submitReport = onRequest(
       type, lat: +lat.toFixed(5), lng: +lng.toFixed(5), province,
       occurredAt: Timestamp.fromDate(occurred),
       ...(description ? { description } : {}),
-      status, createdAt: FieldValue.serverTimestamp(),
+      source: 'community', status, createdAt: FieldValue.serverTimestamp(),
     });
     batch.set(db().doc(`ip_raw/${reportRef.id}`), {
       reportId: reportRef.id, ip, createdAt: FieldValue.serverTimestamp(),

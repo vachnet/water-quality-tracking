@@ -10,10 +10,16 @@ export const reportsByProvince = (slug: string) => reports.filter((r) => r.provi
 const DAY = 86400000;
 export function stats() {
   const now = Date.now();
+  const within = (days: number) => reports.filter((r) => now - Date.parse(r.occurredAt) < days * DAY);
   return {
-    total: reports.length,
-    last24h: reports.filter((r) => now - Date.parse(r.occurredAt) < DAY).length,
-    last7d: reports.filter((r) => now - Date.parse(r.occurredAt) < 7 * DAY).length,
+    total: within(30).length,
+    last24h: within(1).length,
+    last7d: within(7).length,
     provinces: new Set(reports.map((r) => r.province)).size,
+    bySource: {
+      community: reports.filter((r) => r.source === 'community').length,
+      government: reports.filter((r) => r.source === 'government').length,
+      news: reports.filter((r) => r.source === 'news').length,
+    },
   };
 }

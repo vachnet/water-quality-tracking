@@ -1,0 +1,428 @@
+[
+ {
+  "id": "news-khlong-song-2026-10",
+  "source": "news",
+  "type": "fish-kill",
+  "title": "ปลาตายและน้ำเสียในคลองสอง (คลองระพีพัฒน์) ปทุมธานี",
+  "description": "พบปลาตายจำนวนมากและน้ำดำมีกลิ่นเหม็นในคลองสอง อ.คลองหลวง กรมควบคุมมลพิษเก็บตัวอย่าง 5 จุดเมื่อ 16 ต.ค. 2569 พบออกซิเจนละลายน้ำที่จุดปลาตายหลักเป็น 0 มก./ลิตร ผลแล็บเต็มรออีกประมาณ 7 วัน หน่วยงานรัฐเร่งเก็บซากปลาและเติมน้ำคุณภาพดี",
+  "lat": 14.07,
+  "lng": 100.66,
+  "province": "pathum-thani",
+  "locationPrecision": "approximate",
+  "occurredAt": "2026-10-16T13:34:00+07:00",
+  "metrics": {
+   "DO_mgL": 0,
+   "pH": 7.17
+  },
+  "references": [
+   {
+    "name": "PPTVHD36 — คาดเก็บซากปลาคลองสองเสร็จวันนี้",
+    "url": "https://www.pptvhd36.com/news/%E0%B8%AA%E0%B8%B1%E0%B8%87%E0%B8%84%E0%B8%A1/285316",
+    "date": "2026-10-16"
+   },
+   {
+    "name": "PPTVHD36 — สุชาติสั่งด่วน ตรวจน้ำคลองรังสิตฯ",
+    "url": "https://www.pptvhd36.com/news/%E0%B8%81%E0%B8%B2%E0%B8%A3%E0%B9%80%E0%B8%A1%E0%B8%B7%E0%B8%AD%E0%B8%87/285359",
+    "date": "2026-10-17"
+   },
+   {
+    "name": "ไทยโพสต์ — แก้ปัญหาน้ำเสียคลองระพีพัฒน์",
+    "url": "https://www.thaipost.net/general-news/1091601/",
+    "date": "2026-10-20"
+   }
+  ],
+  "status": "published"
+ },
+ {
+  "id": "news-chachoengsao-2026-10",
+  "source": "news",
+  "type": "fish-kill",
+  "title": "ปลาบึกตายในบ่อและน้ำเสีย ฉะเชิงเทรา",
+  "description": "ปลาบึกตายจำนวนมากในบ่อปิดที่ อ.บางน้ำเปรี้ยว สำนักงานประมงจังหวัดวัดค่าออกซิเจนละลายน้ำได้ 0.3 มก./ลิตร กรมอนามัยระบุว่ายังไม่พบข้อบ่งชี้ชัดเจนของสาเหตุ รอผลแล็บยืนยันจาก คพ.",
+  "lat": 13.78,
+  "lng": 101.11,
+  "province": "chachoengsao",
+  "locationPrecision": "approximate",
+  "occurredAt": "2026-10-12T16:53:00+07:00",
+  "metrics": {
+   "DO_mgL": 0.3,
+   "pH": 6.93
+  },
+  "references": [
+   {
+    "name": "Hfocus — กรมอนามัยเร่งสอบปลาบึกตาย-น้ำเสียฉะเชิงเทรา",
+    "url": "https://www.hfocus.org/content/2026/10/39873",
+    "date": "2026-10-12"
+   }
+  ],
+  "status": "published"
+ },
+ {
+  "id": "news-rayong-2026-07",
+  "source": "news",
+  "type": "discharge",
+  "title": "ปลาตายเกลื่อนคลองหนองน้ำข้าว ระยอง สงสัยโรงงานปล่อยน้ำเสีย",
+  "description": "พบปลาตายและน้ำดำเน่าในคลองหนองน้ำข้าว อ.บ้านค่าย ผู้ว่าฯ ระยองสั่งให้โรงงานผลิตพาเลทไม้แห่งหนึ่งปิดท่อระบายและแก้ไขใน 3 วัน น้ำที่จุดปล่อยของโรงงานมี DO 0.76 มก./ลิตร ขณะที่จุดตรวจอื่นในคลองผ่านเกณฑ์เบื้องต้น",
+  "lat": 12.72,
+  "lng": 101.17,
+  "province": "rayong",
+  "locationPrecision": "approximate",
+  "occurredAt": "2026-07-30T12:31:00+07:00",
+  "metrics": {
+   "DO_at_discharge_mgL": 0.76
+  },
+  "references": [
+   {
+    "name": "ผู้จัดการออนไลน์ — ผู้ว่าฯระยองสั่งปราบเด็ดขาด หลังพบปลาตายเกลื่อนคลองหนองน้ำข้าว",
+    "url": "https://mgronline.com/qol/detail/9690000074672",
+    "date": "2026-07-30"
+   }
+  ],
+  "status": "published"
+ },
+ {
+  "id": "news-mekong-loei-2026-04",
+  "source": "news",
+  "type": "other",
+  "title": "ปลาแค้เป็นตุ่มในแม่น้ำโขง จ.เลย",
+  "description": "ชาวประมงพบปลาแค้มีตุ่มและแผลในแม่น้ำโขง จ.เลย ผู้เชี่ยวชาญที่ให้สัมภาษณ์สันนิษฐานว่าเกิดจากพยาธิและสภาพแวดล้อมที่ไม่เหมาะสม (ความเห็นผู้เชี่ยวชาญ ไม่ใช่ผลตรวจอย่างเป็นทางการ) ไม่ใช่เหตุปลาตายหมู่",
+  "lat": 17.9,
+  "lng": 101.67,
+  "province": "loei",
+  "locationPrecision": "province",
+  "occurredAt": "2026-04-23T17:12:00+07:00",
+  "references": [
+   {
+    "name": "Thai PBS — เปิดสาเหตุ \"ปลาแค้\" เป็นตุ่ม จากเชียงรายสู่แม่น้ำโขง จ.เลย",
+    "url": "https://www.thaipbs.or.th/news/content/505009",
+    "date": "2026-04-23"
+   }
+  ],
+  "status": "published"
+ },
+ {
+  "id": "gov-wqi-2567-01",
+  "source": "government",
+  "type": "wqi-degraded",
+  "title": "ดัชนีคุณภาพน้ำ ปราจีนบุรี: 60 (เสื่อมโทรม)",
+  "description": "ดัชนีคุณภาพน้ำผิวดิน (WQI) ของแหล่งน้ำ \"ปราจีนบุรี\" ปี 2567 อยู่ที่ 60 จัดอยู่ในเกณฑ์ \"เสื่อมโทรม\" ตำแหน่งบนแผนที่เป็นจุดอ้างอิงระดับจังหวัด ไม่ใช่ตำแหน่งสถานีจริง",
+  "lat": 13.9909,
+  "lng": 101.3127,
+  "province": "prachinburi",
+  "locationPrecision": "province",
+  "occurredAt": "2024-12-31T00:00:00+07:00",
+  "metrics": {
+   "wqi": 60,
+   "class": "เสื่อมโทรม",
+   "year": 2567
+  },
+  "references": [
+   {
+    "name": "กรมควบคุมมลพิษ (PCD) via data.go.th — Open Data Common",
+    "url": "https://data.go.th/en/dataset/_11_07_wqiscore",
+    "date": "2024-12-31"
+   }
+  ],
+  "status": "published"
+ },
+ {
+  "id": "gov-wqi-2567-02",
+  "source": "government",
+  "type": "wqi-degraded",
+  "title": "ดัชนีคุณภาพน้ำ บึงสีไฟ: 60 (เสื่อมโทรม)",
+  "description": "ดัชนีคุณภาพน้ำผิวดิน (WQI) ของแหล่งน้ำ \"บึงสีไฟ\" ปี 2567 อยู่ที่ 60 จัดอยู่ในเกณฑ์ \"เสื่อมโทรม\" ตำแหน่งบนแผนที่เป็นจุดอ้างอิงระดับจังหวัด ไม่ใช่ตำแหน่งสถานีจริง",
+  "lat": 16.4129,
+  "lng": 100.3788,
+  "province": "phichit",
+  "locationPrecision": "province",
+  "occurredAt": "2024-12-31T00:00:00+07:00",
+  "metrics": {
+   "wqi": 60,
+   "class": "เสื่อมโทรม",
+   "year": 2567
+  },
+  "references": [
+   {
+    "name": "กรมควบคุมมลพิษ (PCD) via data.go.th — Open Data Common",
+    "url": "https://data.go.th/en/dataset/_11_07_wqiscore",
+    "date": "2024-12-31"
+   }
+  ],
+  "status": "published"
+ },
+ {
+  "id": "gov-wqi-2567-03",
+  "source": "government",
+  "type": "wqi-degraded",
+  "title": "ดัชนีคุณภาพน้ำ ป่าสัก: 60 (เสื่อมโทรม)",
+  "description": "ดัชนีคุณภาพน้ำผิวดิน (WQI) ของแหล่งน้ำ \"ป่าสัก\" ปี 2567 อยู่ที่ 60 จัดอยู่ในเกณฑ์ \"เสื่อมโทรม\" ตำแหน่งบนแผนที่เป็นจุดอ้างอิงระดับจังหวัด ไม่ใช่ตำแหน่งสถานีจริง",
+  "lat": 14.5289,
+  "lng": 100.8808,
+  "province": "saraburi",
+  "locationPrecision": "province",
+  "occurredAt": "2024-12-31T00:00:00+07:00",
+  "metrics": {
+   "wqi": 60,
+   "class": "เสื่อมโทรม",
+   "year": 2567
+  },
+  "references": [
+   {
+    "name": "กรมควบคุมมลพิษ (PCD) via data.go.th — Open Data Common",
+    "url": "https://data.go.th/en/dataset/_11_07_wqiscore",
+    "date": "2024-12-31"
+   }
+  ],
+  "status": "published"
+ },
+ {
+  "id": "gov-wqi-2567-04",
+  "source": "government",
+  "type": "wqi-degraded",
+  "title": "ดัชนีคุณภาพน้ำ นครนายก: 59 (เสื่อมโทรม)",
+  "description": "ดัชนีคุณภาพน้ำผิวดิน (WQI) ของแหล่งน้ำ \"นครนายก\" ปี 2567 อยู่ที่ 59 จัดอยู่ในเกณฑ์ \"เสื่อมโทรม\" ตำแหน่งบนแผนที่เป็นจุดอ้างอิงระดับจังหวัด ไม่ใช่ตำแหน่งสถานีจริง",
+  "lat": 14.2369,
+  "lng": 101.2731,
+  "province": "nakhon-nayok",
+  "locationPrecision": "province",
+  "occurredAt": "2024-12-31T00:00:00+07:00",
+  "metrics": {
+   "wqi": 59,
+   "class": "เสื่อมโทรม",
+   "year": 2567
+  },
+  "references": [
+   {
+    "name": "กรมควบคุมมลพิษ (PCD) via data.go.th — Open Data Common",
+    "url": "https://data.go.th/en/dataset/_11_07_wqiscore",
+    "date": "2024-12-31"
+   }
+  ],
+  "status": "published"
+ },
+ {
+  "id": "gov-wqi-2567-05",
+  "source": "government",
+  "type": "wqi-degraded",
+  "title": "ดัชนีคุณภาพน้ำ ลพบุรี: 58 (เสื่อมโทรม)",
+  "description": "ดัชนีคุณภาพน้ำผิวดิน (WQI) ของแหล่งน้ำ \"ลพบุรี\" ปี 2567 อยู่ที่ 58 จัดอยู่ในเกณฑ์ \"เสื่อมโทรม\" ตำแหน่งบนแผนที่เป็นจุดอ้างอิงระดับจังหวัด ไม่ใช่ตำแหน่งสถานีจริง",
+  "lat": 14.8595,
+  "lng": 100.6534,
+  "province": "lopburi",
+  "locationPrecision": "province",
+  "occurredAt": "2024-12-31T00:00:00+07:00",
+  "metrics": {
+   "wqi": 58,
+   "class": "เสื่อมโทรม",
+   "year": 2567
+  },
+  "references": [
+   {
+    "name": "กรมควบคุมมลพิษ (PCD) via data.go.th — Open Data Common",
+    "url": "https://data.go.th/en/dataset/_11_07_wqiscore",
+    "date": "2024-12-31"
+   }
+  ],
+  "status": "published"
+ },
+ {
+  "id": "gov-wqi-2567-06",
+  "source": "government",
+  "type": "wqi-degraded",
+  "title": "ดัชนีคุณภาพน้ำ บึงราชนก: 58 (เสื่อมโทรม)",
+  "description": "ดัชนีคุณภาพน้ำผิวดิน (WQI) ของแหล่งน้ำ \"บึงราชนก\" ปี 2567 อยู่ที่ 58 จัดอยู่ในเกณฑ์ \"เสื่อมโทรม\" ตำแหน่งบนแผนที่เป็นจุดอ้างอิงระดับจังหวัด ไม่ใช่ตำแหน่งสถานีจริง",
+  "lat": 16.3829,
+  "lng": 100.2888,
+  "province": "phichit",
+  "locationPrecision": "province",
+  "occurredAt": "2024-12-31T00:00:00+07:00",
+  "metrics": {
+   "wqi": 58,
+   "class": "เสื่อมโทรม",
+   "year": 2567
+  },
+  "references": [
+   {
+    "name": "กรมควบคุมมลพิษ (PCD) via data.go.th — Open Data Common",
+    "url": "https://data.go.th/en/dataset/_11_07_wqiscore",
+    "date": "2024-12-31"
+   }
+  ],
+  "status": "published"
+ },
+ {
+  "id": "gov-wqi-2567-08",
+  "source": "government",
+  "type": "wqi-degraded",
+  "title": "ดัชนีคุณภาพน้ำ ท่าจีนตอนกลาง: 56 (เสื่อมโทรม)",
+  "description": "ดัชนีคุณภาพน้ำผิวดิน (WQI) ของแหล่งน้ำ \"ท่าจีนตอนกลาง\" ปี 2567 อยู่ที่ 56 จัดอยู่ในเกณฑ์ \"เสื่อมโทรม\" ตำแหน่งบนแผนที่เป็นจุดอ้างอิงระดับจังหวัด ไม่ใช่ตำแหน่งสถานีจริง",
+  "lat": 14.4745,
+  "lng": 100.0922,
+  "province": "suphan-buri",
+  "locationPrecision": "province",
+  "occurredAt": "2024-12-31T00:00:00+07:00",
+  "metrics": {
+   "wqi": 56,
+   "class": "เสื่อมโทรม",
+   "year": 2567
+  },
+  "references": [
+   {
+    "name": "กรมควบคุมมลพิษ (PCD) via data.go.th — Open Data Common",
+    "url": "https://data.go.th/en/dataset/_11_07_wqiscore",
+    "date": "2024-12-31"
+   }
+  ],
+  "status": "published"
+ },
+ {
+  "id": "gov-wqi-2567-09",
+  "source": "government",
+  "type": "wqi-degraded",
+  "title": "ดัชนีคุณภาพน้ำ ระยองตอนบน: 56 (เสื่อมโทรม)",
+  "description": "ดัชนีคุณภาพน้ำผิวดิน (WQI) ของแหล่งน้ำ \"ระยองตอนบน\" ปี 2567 อยู่ที่ 56 จัดอยู่ในเกณฑ์ \"เสื่อมโทรม\" ตำแหน่งบนแผนที่เป็นจุดอ้างอิงระดับจังหวัด ไม่ใช่ตำแหน่งสถานีจริง",
+  "lat": 12.7114,
+  "lng": 101.3416,
+  "province": "rayong",
+  "locationPrecision": "province",
+  "occurredAt": "2024-12-31T00:00:00+07:00",
+  "metrics": {
+   "wqi": 56,
+   "class": "เสื่อมโทรม",
+   "year": 2567
+  },
+  "references": [
+   {
+    "name": "กรมควบคุมมลพิษ (PCD) via data.go.th — Open Data Common",
+    "url": "https://data.go.th/en/dataset/_11_07_wqiscore",
+    "date": "2024-12-31"
+   }
+  ],
+  "status": "published"
+ },
+ {
+  "id": "gov-wqi-2567-10",
+  "source": "government",
+  "type": "wqi-degraded",
+  "title": "ดัชนีคุณภาพน้ำ พังราดตอนบน: 55 (เสื่อมโทรม)",
+  "description": "ดัชนีคุณภาพน้ำผิวดิน (WQI) ของแหล่งน้ำ \"พังราดตอนบน\" ปี 2567 อยู่ที่ 55 จัดอยู่ในเกณฑ์ \"เสื่อมโทรม\" ตำแหน่งบนแผนที่เป็นจุดอ้างอิงระดับจังหวัด ไม่ใช่ตำแหน่งสถานีจริง",
+  "lat": 12.6714,
+  "lng": 102.1039,
+  "province": "chanthaburi",
+  "locationPrecision": "province",
+  "occurredAt": "2024-12-31T00:00:00+07:00",
+  "metrics": {
+   "wqi": 55,
+   "class": "เสื่อมโทรม",
+   "year": 2567
+  },
+  "references": [
+   {
+    "name": "กรมควบคุมมลพิษ (PCD) via data.go.th — Open Data Common",
+    "url": "https://data.go.th/en/dataset/_11_07_wqiscore",
+    "date": "2024-12-31"
+   }
+  ],
+  "status": "published"
+ },
+ {
+  "id": "gov-wqi-2567-11",
+  "source": "government",
+  "type": "wqi-degraded",
+  "title": "ดัชนีคุณภาพน้ำ ท่าจีนตอนล่าง: 52 (เสื่อมโทรม)",
+  "description": "ดัชนีคุณภาพน้ำผิวดิน (WQI) ของแหล่งน้ำ \"ท่าจีนตอนล่าง\" ปี 2567 อยู่ที่ 52 จัดอยู่ในเกณฑ์ \"เสื่อมโทรม\" ตำแหน่งบนแผนที่เป็นจุดอ้างอิงระดับจังหวัด ไม่ใช่ตำแหน่งสถานีจริง",
+  "lat": 13.4875,
+  "lng": 100.214,
+  "province": "samut-sakhon",
+  "locationPrecision": "province",
+  "occurredAt": "2024-12-31T00:00:00+07:00",
+  "metrics": {
+   "wqi": 52,
+   "class": "เสื่อมโทรม",
+   "year": 2567
+  },
+  "references": [
+   {
+    "name": "กรมควบคุมมลพิษ (PCD) via data.go.th — Open Data Common",
+    "url": "https://data.go.th/en/dataset/_11_07_wqiscore",
+    "date": "2024-12-31"
+   }
+  ],
+  "status": "published"
+ },
+ {
+  "id": "gov-wqi-2567-12",
+  "source": "government",
+  "type": "wqi-degraded",
+  "title": "ดัชนีคุณภาพน้ำ ระยองตอนล่าง: 51 (เสื่อมโทรม)",
+  "description": "ดัชนีคุณภาพน้ำผิวดิน (WQI) ของแหล่งน้ำ \"ระยองตอนล่าง\" ปี 2567 อยู่ที่ 51 จัดอยู่ในเกณฑ์ \"เสื่อมโทรม\" ตำแหน่งบนแผนที่เป็นจุดอ้างอิงระดับจังหวัด ไม่ใช่ตำแหน่งสถานีจริง",
+  "lat": 12.6514,
+  "lng": 101.3116,
+  "province": "rayong",
+  "locationPrecision": "province",
+  "occurredAt": "2024-12-31T00:00:00+07:00",
+  "metrics": {
+   "wqi": 51,
+   "class": "เสื่อมโทรม",
+   "year": 2567
+  },
+  "references": [
+   {
+    "name": "กรมควบคุมมลพิษ (PCD) via data.go.th — Open Data Common",
+    "url": "https://data.go.th/en/dataset/_11_07_wqiscore",
+    "date": "2024-12-31"
+   }
+  ],
+  "status": "published"
+ },
+ {
+  "id": "gov-wqi-2567-13",
+  "source": "government",
+  "type": "wqi-degraded",
+  "title": "ดัชนีคุณภาพน้ำ ลำตะคองตอนล่าง: 51 (เสื่อมโทรม)",
+  "description": "ดัชนีคุณภาพน้ำผิวดิน (WQI) ของแหล่งน้ำ \"ลำตะคองตอนล่าง\" ปี 2567 อยู่ที่ 51 จัดอยู่ในเกณฑ์ \"เสื่อมโทรม\" ตำแหน่งบนแผนที่เป็นจุดอ้างอิงระดับจังหวัด ไม่ใช่ตำแหน่งสถานีจริง",
+  "lat": 14.9799,
+  "lng": 102.0678,
+  "province": "nakhon-ratchasima",
+  "locationPrecision": "province",
+  "occurredAt": "2024-12-31T00:00:00+07:00",
+  "metrics": {
+   "wqi": 51,
+   "class": "เสื่อมโทรม",
+   "year": 2567
+  },
+  "references": [
+   {
+    "name": "กรมควบคุมมลพิษ (PCD) via data.go.th — Open Data Common",
+    "url": "https://data.go.th/en/dataset/_11_07_wqiscore",
+    "date": "2024-12-31"
+   }
+  ],
+  "status": "published"
+ },
+ {
+  "id": "gov-wqi-2567-14",
+  "source": "government",
+  "type": "wqi-degraded",
+  "title": "ดัชนีคุณภาพน้ำ เจ้าพระยาตอนล่าง: 43 (เสื่อมโทรม)",
+  "description": "ดัชนีคุณภาพน้ำผิวดิน (WQI) ของแหล่งน้ำ \"เจ้าพระยาตอนล่าง\" ปี 2567 อยู่ที่ 43 จัดอยู่ในเกณฑ์ \"เสื่อมโทรม\" ตำแหน่งบนแผนที่เป็นจุดอ้างอิงระดับจังหวัด ไม่ใช่ตำแหน่งสถานีจริง",
+  "lat": 13.7863,
+  "lng": 100.5618,
+  "province": "bangkok",
+  "locationPrecision": "province",
+  "occurredAt": "2024-12-31T00:00:00+07:00",
+  "metrics": {
+   "wqi": 43,
+   "class": "เสื่อมโทรม",
+   "year": 2567
+  },
+  "references": [
+   {
+    "name": "กรมควบคุมมลพิษ (PCD) via data.go.th — Open Data Common",
+    "url": "https://data.go.th/en/dataset/_11_07_wqiscore",
+    "date": "2024-12-31"
+   }
+  ],
+  "status": "published"
+ }
+]
