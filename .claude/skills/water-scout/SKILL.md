@@ -22,7 +22,8 @@ validation. The LLM only writes a short title/description for each *new, relevan
 5. **Ingest.** Run `node scripts/scout-ingest.mjs --seed` (needs `FIREBASE_SERVICE_ACCOUNT` in the environment; if it is
    missing, run without `--seed` and tell the user the Firestore upsert was skipped). The script validates everything
    the LLM returned, merges articles about the same event as extra references, and rejects bad output.
-6. **Report in ≤5 lines:** counts (new / merged / rejected), the titles added with their publisher, and anything the
+6. **Toxic-substance numbers.** Candidates with `toxicNumbers: true` mention a metal with a mg value. They are ingested as news items only. List them to the user (title + URL) so the numbers can be reviewed and added by hand to `data/toxic-measurements.json` (then `node scripts/seed-measurements.mjs`). Never add measurements automatically: they drive alerts.
+7. **Report in ≤5 lines:** counts (new / merged / rejected), the titles added with their publisher, and anything the
    user must do. The public site picks up the new Firestore data on its next hourly deploy.
 
 ## Haiku prompt (verbatim)

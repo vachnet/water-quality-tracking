@@ -10,8 +10,10 @@ const MAX_CANDIDATES = 10; // hard cap on LLM work per run
 const MAX_AGE_DAYS = 14;
 const SNIPPET_CHARS = 1100;
 
-const QUERIES = ['ปลาตาย น้ำเสีย', 'น้ำเน่าเสีย แม่น้ำ คลอง', 'ปล่อยน้ำเสีย โรงงาน คลอง', 'คราบน้ำมัน แม่น้ำ ทะเล', 'น้ำเปลี่ยนสี คลอง แม่น้ำ', 'กรมควบคุมมลพิษ ตรวจคุณภาพน้ำ ปลาตาย'];
-const KEYWORDS = /ปลาตาย|น้ำเสีย|น้ำเน่า|คราบน้ำมัน|น้ำมันรั่ว|น้ำเปลี่ยนสี|น้ำดำ|ปล่อยน้ำเสีย|สาหร่าย|ออกซิเจน|คุณภาพน้ำ/;
+const QUERIES = ['ปลาตาย น้ำเสีย', 'น้ำเน่าเสีย แม่น้ำ คลอง', 'ปล่อยน้ำเสีย โรงงาน คลอง', 'คราบน้ำมัน แม่น้ำ ทะเล', 'น้ำเปลี่ยนสี คลอง แม่น้ำ', 'กรมควบคุมมลพิษ ตรวจคุณภาพน้ำ ปลาตาย', 'สารหนู แม่น้ำ เกินมาตรฐาน', 'โลหะหนัก น้ำ ตะกอนดิน ผลตรวจ', 'สารปนเปื้อน แม่น้ำ อะลูมิเนียม ตะกั่ว ปรอท'];
+const KEYWORDS = /ปลาตาย|น้ำเสีย|น้ำเน่า|คราบน้ำมัน|น้ำมันรั่ว|น้ำเปลี่ยนสี|น้ำดำ|ปล่อยน้ำเสีย|สาหร่าย|ออกซิเจน|คุณภาพน้ำ|สารหนู|โลหะหนัก|ตะกั่ว|ปรอท|แคดเมียม|อะลูมิเนียม|สารปนเปื้อน|ตะกอนดิน/;
+// Numeric toxic-substance readings are NOT auto-ingested; candidates that contain them are flagged for human review.
+const TOXIC_NUMBERS = /(สารหนู|ตะกั่ว|ปรอท|แคดเมียม|อะลูมิเนียม|แมงกานีส|โครเมียม|นิกเกิล)[^.]{0,80}?\d+\.?\d*\s*(มก\.\/ล|มก\.\/กก|มิลลิกรัม)/;
 // Trusted outlets only (national media, public broadcasters, government). Subdomains match.
 const ALLOW = ['thaipbs.or.th', 'thaipost.net', 'mgronline.com', 'matichon.co.th', 'khaosod.co.th', 'bangkokbiznews.com', 'nationthailand.com',
   'bangkokpost.com', 'pptvhd36.com', 'hfocus.org', 'amarintv.com', 'thairath.co.th', 'dailynews.co.th', 'sanook.com', 'tnnthailand.com', 'thematter.co',
@@ -101,7 +103,7 @@ async function scoutNews() {
       if (!KEYWORDS.test(c.title) || !KEYWORDS.test(body)) { state.seen[c.id] = { t: new Date().toISOString(), s: 'irrelevant' }; skipped++; continue; }
       const province = detectProvince(`${c.title} ${c.title} ${text.slice(0, 3000)}`);
       if (!province) { state.seen[c.id] = { t: new Date().toISOString(), s: 'no-province' }; skipped++; continue; }
-      out.push({ ...c, publisher: new URL(c.url).hostname.replace(/^www\./, ''), province, snippet: snippet(c.title, text) });
+      out.push({ ...c, toxicNumbers: TOXIC_NUMBERS.test(text), publisher: new URL(c.url).hostname.replace(/^www\./, ''), province, snippet: snippet(c.title, text) });
       state.seen[c.id] = { t: new Date().toISOString(), s: 'candidate' };
     } catch (e) { state.seen[c.id] = { t: new Date().toISOString(), s: 'fetch_failed' }; skipped++; }
   }

@@ -71,6 +71,21 @@ function demo() {
   }).sort((a, b) => b.occurredAt.localeCompare(a.occurredAt));
 }
 
+async function measurementsFromFirestore() {
+  const { getFirestore } = await import('firebase-admin/firestore');
+  const snap = await getFirestore().collection('measurements').get();
+  return snap.docs.map((d) => {
+    const { sampledTo, ...r } = d.data();
+    return { id: d.id, ...r, sampledTo: sampledTo.toDate().toISOString().slice(0, 10) };
+  });
+}
+
 const reports = process.env.FIREBASE_SERVICE_ACCOUNT ? await fromFirestore() : demo();
+// Toxic-substance measurements (official lab results reported in news): Firestore, or the committed seed file in demo mode.
+const measurements = process.env.FIREBASE_SERVICE_ACCOUNT
+  ? await measurementsFromFirestore()
+  : JSON.parse((await import('node:fs')).readFileSync(new URL('../data/toxic-measurements.json', import.meta.url), 'utf8'));
+writeFileSync(new URL('../src/data/measurements.json', import.meta.url), JSON.stringify({ generatedAt: new Date().toISOString(), measurements }));
+console.log(`measurements.json: ${measurements.length} rows`);
 writeFileSync(OUT, JSON.stringify({ generatedAt: new Date().toISOString(), demo: !process.env.FIREBASE_SERVICE_ACCOUNT, reports }));
 console.log(`reports.json: ${reports.length} reports (${process.env.FIREBASE_SERVICE_ACCOUNT ? 'firestore' : 'demo'})`);
