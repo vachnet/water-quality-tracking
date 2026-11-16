@@ -1,0 +1,11 @@
+node_modules
+dist
+.astro
+src/data/reports.json
+.env
+.env.local
+functions/lib
+functions/node_modules
+.firebase
+*.log
+.DS_Store

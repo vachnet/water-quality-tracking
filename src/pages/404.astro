@@ -1,0 +1,10 @@
+---
+import Base from '../layouts/Base.astro';
+import { url } from '../lib/url';
+---
+<Base title="ไม่พบหน้าที่ต้องการ" description="ไม่พบหน้าที่คุณกำลังมองหา" path="/404/" noindex>
+  <div class="wrap section prose">
+    <h1>ไม่พบหน้าที่ต้องการ</h1>
+    <p><a class="btn" href={url('/')}>กลับหน้าแรก</a></p>
+  </div>
+</Base>

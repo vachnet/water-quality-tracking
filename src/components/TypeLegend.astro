@@ -1,0 +1,10 @@
+---
+import { REPORT_TYPES } from '../lib/types';
+---
+<ul class="legend" aria-label="ประเภทเหตุการณ์">
+  {REPORT_TYPES.map((t) => <li><span class="dot" style={`background:${t.color}`}></span>{t.label}</li>)}
+</ul>
+<style>
+  .legend { list-style: none; display: flex; flex-wrap: wrap; gap: 8px 16px; padding: 0; margin: 12px 0 0; font-size: 0.9rem; }
+  .legend li { display: inline-flex; align-items: center; gap: 6px; }
+</style>

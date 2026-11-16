@@ -1,0 +1,25 @@
+{
+  "name": "water-quality-tracking",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "fetch-data": "node scripts/fetch-reports.mjs",
+    "build": "node scripts/fetch-reports.mjs && astro build",
+    "preview": "astro preview",
+    "check": "astro check"
+  },
+  "dependencies": {
+    "@fontsource/noto-sans-thai": "^5.3.0",
+    "astro": "^5.0.0",
+    "firebase": "^13.3.0",
+    "maplibre-gl": "^4.7.1"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.4",
+    "@astrojs/sitemap": "^3.2.1",
+    "firebase-admin": "^12.7.0",
+    "typescript": "^5.6.3"
+  }
+}

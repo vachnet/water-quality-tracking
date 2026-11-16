@@ -1,0 +1,157 @@
+---
+import Base from '../../layouts/Base.astro';
+---
+<Base title="Admin — Abuse monitoring" description="Admin abuse dashboard" path="/admin/" noindex>
+  <div class="wrap section">
+    <h1>Abuse monitoring</h1>
+    <p id="mode" class="notice" hidden></p>
+
+    <div id="signin" class="card" hidden>
+      <p>ต้องเข้าสู่ระบบด้วยบัญชีผู้ดูแล (Firebase Auth custom claim <code>admin</code>)</p>
+      <button class="btn" id="signin-btn">Sign in with Google</button>
+    </div>
+
+    <div id="dash" hidden>
+      <div class="grid cols-4" style="margin-bottom:20px">
+        <div class="card"><div class="num" id="today">–</div><div class="muted">Reports today</div></div>
+        <div class="card"><div class="num" id="susp">–</div><div class="muted">Suspicious IPs</div></div>
+      </div>
+
+      <div class="card">
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>IP</th><th>1h</th><th>24h</th><th>Risk</th><th>Reasons</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+        <p class="muted" style="margin:12px 0 0;font-size:0.88rem">
+          IP จริงแสดงเฉพาะผู้ดูแลที่ได้รับอนุญาต และหายไปหลัง 30 วัน (เหลือเพียงค่าแฮช) · การบล็อกเป็นแบบชั่วคราวเสมอ และถูกบันทึกใน audit log
+        </p>
+      </div>
+      <p id="msg" role="status" aria-live="polite" class="muted"></p>
+    </div>
+  </div>
+</Base>
+
+<script>
+  const API = import.meta.env.PUBLIC_ADMIN_API_URL as string | undefined;
+  const FB = import.meta.env.PUBLIC_FIREBASE_CONFIG as string | undefined;
+
+  type Row = {
+    ipHash: string; ip: string | null; reports1h: number; reports24h: number;
+    risk: 'high' | 'medium' | 'low'; riskScore: number; flags: string[]; blocked: boolean;
+  };
+
+  const $ = (id: string) => document.getElementById(id)!;
+  const show = (id: string, on = true) => (($(id) as HTMLElement).hidden = !on);
+  const say = (t: string) => ($('msg').textContent = t);
+
+  // ---- demo mode (no API configured): mock data only ----------------------
+  const demoRows: Row[] = [
+    { ipHash: 'demo-1', ip: '203.0.113.10', reports1h: 18, reports24h: 18, risk: 'high', riskScore: 90, flags: ['burst', 'duplicate-location'], blocked: false },
+    { ipHash: 'demo-2', ip: '198.51.100.22', reports1h: 5, reports24h: 7, risk: 'medium', riskScore: 40, flags: ['burst'], blocked: false },
+    { ipHash: 'demo-3', ip: '192.0.2.15', reports1h: 1, reports24h: 2, risk: 'low', riskScore: 20, flags: ['suspicious-coordinates'], blocked: true },
+  ];
+
+  let token = '';
+  async function call(path: string, init?: RequestInit) {
+    const r = await fetch(`${API!.replace(/\/$/, '')}${path}`, {
+      ...init,
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    });
+    if (!r.ok) throw new Error(`${r.status}`);
+    return r.json();
+  }
+
+  function render(rows: Row[], today: number, demo: boolean) {
+    $('today').textContent = String(today);
+    $('susp').textContent = String(rows.length);
+    const tb = $('rows');
+    tb.replaceChildren();
+    for (const r of rows) {
+      const tr = document.createElement('tr');
+      const cell = (t: string) => {
+        const td = document.createElement('td');
+        td.textContent = t;
+        tr.append(td);
+        return td;
+      };
+      cell(r.ip ?? `${r.ipHash.slice(0, 10)}… (hash)`);
+      cell(String(r.reports1h));
+      cell(String(r.reports24h));
+      const rk = cell(r.risk.toUpperCase());
+      rk.style.fontWeight = '700';
+      rk.style.color = r.risk === 'high' ? 'var(--danger)' : r.risk === 'medium' ? 'var(--warn-text)' : 'var(--ok)';
+      cell(r.flags.join(', ') || '—');
+      cell(r.blocked ? 'Blocked' : 'Active');
+
+      const act = document.createElement('td');
+      const mk = (label: string, cls: string, fn: () => Promise<void>) => {
+        const b = document.createElement('button');
+        b.className = `btn small ${cls}`;
+        b.textContent = label;
+        b.style.marginRight = '6px';
+        b.onclick = async () => {
+          b.disabled = true;
+          try { await fn(); } catch { say('ดำเนินการไม่สำเร็จ'); }
+          b.disabled = false;
+        };
+        act.append(b);
+      };
+      if (r.blocked) {
+        mk('Unblock', 'secondary', async () => {
+          if (!demo) await call('/unblock', { method: 'POST', body: JSON.stringify({ ipHash: r.ipHash }) });
+          r.blocked = false; render(rows, today, demo); say('ยกเลิกการบล็อกแล้ว');
+        });
+      } else {
+        mk('Block 24h', 'danger', async () => {
+          if (!demo) await call('/block', { method: 'POST', body: JSON.stringify({ ipHash: r.ipHash, hours: 24, reason: 'manual' }) });
+          r.blocked = true; render(rows, today, demo); say('บล็อก 24 ชั่วโมงแล้ว');
+        });
+      }
+      mk('Hide all reports', 'secondary', async () => {
+        if (!confirm('ซ่อนรายงานทั้งหมดจาก IP นี้?')) return;
+        const res = demo ? { updated: r.reports24h } : await call('/hide', { method: 'POST', body: JSON.stringify({ ipHash: r.ipHash, status: 'hidden' }) });
+        say(`ซ่อน ${res.updated} รายงานแล้ว`);
+      });
+      tr.append(act);
+      tb.append(tr);
+    }
+  }
+
+  async function load() {
+    const o = await call('/overview');
+    render(o.suspicious, o.reportsToday, false);
+  }
+
+  if (!API) {
+    const m = $('mode');
+    m.hidden = false;
+    m.textContent = 'โหมดทดลอง: ข้อมูลด้านล่างเป็นข้อมูลสมมติ ยังไม่ได้เชื่อมต่อ Admin API';
+    show('dash');
+    render(demoRows, 128, true);
+  } else {
+    show('signin');
+    $('signin-btn').addEventListener('click', async () => {
+      try {
+        const [{ initializeApp }, { getAuth, GoogleAuthProvider, signInWithPopup }] = await Promise.all([
+          import('firebase/app'), import('firebase/auth'),
+        ]);
+        const auth = getAuth(initializeApp(JSON.parse(FB || '{}')));
+        const cred = await signInWithPopup(auth, new GoogleAuthProvider());
+        token = await cred.user.getIdToken(true);
+        await load();
+        show('signin', false);
+        show('dash');
+      } catch {
+        say('เข้าสู่ระบบไม่สำเร็จ หรือบัญชีนี้ไม่มีสิทธิ์ผู้ดูแล');
+        show('dash');
+      }
+    });
+  }
+</script>
+
+<style>
+  .num { font-size: 2rem; font-weight: 700; color: var(--primary); line-height: 1.2; }
+  code { background: var(--surface-2); padding: 1px 6px; border-radius: 6px; }
+</style>

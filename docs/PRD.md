@@ -1,0 +1,32 @@
+# PRD — Community Water Quality Reporting (v2: no evidence, no pre-moderation)
+
+## Policy
+| Item | Decision |
+|---|---|
+| Account | None |
+| Photo | Not collected at all |
+| Required fields | Event type, GPS location, time (default now) |
+| Description | Optional, ≤300 chars |
+| Publish | Immediately, status **Unverified** |
+| Pre-moderation | None; review only flagged / high-risk reports afterwards |
+| IP | Stored backend-only; never in public data |
+
+## Abuse prevention
+Turnstile → blocklist check → 10-minute rate bucket per HMAC(IP) → risk score → publish.
+Thresholds: 1–3 ok, 4–5 +risk, >5 throttle, ≥15 auto-block 24 h (admin can unblock). Never permanent from IP alone.
+Admin: reports per IP (1h/24h/7d), risk reasons, block/unblock, bulk hide.
+
+## Data (Firestore)
+`reports` (public fields) · `ip_raw` (30 d TTL) · `submission_meta` (ip_hash, UA, risk, flags; 180 d TTL) ·
+`ip_restrictions` (doc id = ip_hash, expiresAt) · `block_audit` (180 d) · `rate_buckets`, `dup_keys` (short TTL).
+
+## Architecture & cost
+GitHub Pages (static, hourly rebuild) + Firebase Functions + Firestore. Reads are free-tier (data baked at build time).
+Projected: ~$0/mo up to ~100k visits and ~30k reports/mo; cost then scales with function/Firestore writes only.
+GitHub Pages soft bandwidth limit ≈100 GB/mo — put Cloudflare's free proxy in front or move tiles off-site beyond that.
+
+## SEO
+Static HTML, Thai metadata, canonical, OG, JSON-LD (WebSite, FAQPage, BreadcrumbList, Article), sitemap (zero-report provinces excluded and noindex), robots.txt, per-province landing pages, lazy-loaded map.
+
+## Privacy / PDPA
+Notice states purpose (spam/security), retention (30/180/180 d), access (admins only), contact. Needs legal review.
