@@ -4,9 +4,6 @@ import { getAuth } from 'firebase-admin/auth';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { REGION, RETENTION_DAYS } from './constants';
 import { daysFromNow, handleCors } from './util';
-import { getMessaging } from 'firebase-admin/messaging';
-import { PROVINCE_SLUGS } from './constants';
-import { topicFor } from './alerts';
 
 const ALLOWED_ORIGINS = defineString('ALLOWED_ORIGINS', { default: 'http://localhost:4321' });
 const db = () => getFirestore();
@@ -123,28 +120,6 @@ export const adminApi = onRequest(
         ids.forEach((id) => batch.update(db().doc(`reports/${id}`), { status }));
         await batch.commit();
         return void res.json({ ok: true, updated: ids.length });
-      }
-
-      // POST /alert/send {province: slug|'all', title, body, path?}  — a human admin approves every push
-      if (req.method === 'POST' && route.endsWith('/alert/send')) {
-        const province = String(body.province ?? '');
-        const title = String(body.title ?? '').trim().slice(0, 80);
-        const text = String(body.body ?? '').trim().slice(0, 240);
-        const path = String(body.path ?? '/toxic/');
-        if (!(province === 'all' || PROVINCE_SLUGS.has(province)) || title.length < 5 || text.length < 10 || !path.startsWith('/')) {
-          return void res.status(400).json({ error: 'invalid' });
-        }
-        const origin = ALLOWED_ORIGINS.value().split(',').map((s) => s.trim()).find((o) => o.startsWith('https://'));
-        const messageId = await getMessaging().send({
-          topic: topicFor(province),
-          notification: { title, body: text },
-          webpush: origin ? { fcmOptions: { link: `${origin}${path}` } } : undefined,
-        });
-        await db().collection('alert_log').add({
-          province, title, body: text, path, by: admin, messageId,
-          createdAt: FieldValue.serverTimestamp(), expiresAt: Timestamp.fromDate(daysFromNow(RETENTION_DAYS.blockAudit)),
-        });
-        return void res.json({ ok: true });
       }
 
       res.status(404).json({ error: 'not-found' });
