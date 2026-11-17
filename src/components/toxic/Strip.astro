@@ -1,0 +1,34 @@
+---
+import { tx } from '../../lib/toxicI18n';
+import { lurl, type Lang } from '../../lib/i18n';
+import { riverSummaries, sampledLabel, riverName, roundName } from '../../lib/toxic';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const d = tx(lang);
+const sums = riverSummaries();
+const withEx = sums.filter((s) => s.exceeding > 0 && s.matrix === 'water'); // water only; sediment is a different measure
+const total = withEx.reduce((a, s) => a + s.exceeding, 0);
+const newest = [...withEx].sort((a, b) => b.sampledFrom.localeCompare(a.sampledFrom))[0];
+---
+{sums.length > 0 && (
+  <a class="tx-strip" href={lurl(lang, '/toxic/')}>
+    <span class="tx-strip-ico" aria-hidden="true">
+      <svg width="22" height="22" viewBox="0 0 16 16"><path d="M8 1.2 15.2 14H.8z" fill="currentColor" /><path d="M8 5.6v4.2M8 11.6v.4" stroke="#fff" stroke-width="1.8" stroke-linecap="round" /></svg>
+    </span>
+    <span class="tx-strip-body">
+      <strong>{d.stripH}</strong>
+      <span>{d.stripBody(total, new Set(withEx.map((s) => s.river)).size)}</span>
+      {newest && <span class="muted small">{d.stripNewest} {riverName(newest.river, lang)} · {roundName(newest.round, lang)} · {sampledLabel(newest, lang)}</span>}
+    </span>
+    <span class="tx-strip-cta">{d.stripCta} →</span>
+  </a>
+)}
+<style>
+  .tx-strip { display: flex; align-items: center; gap: var(--sp-4); padding: var(--sp-3) var(--sp-4); border-radius: var(--r-lg); background: var(--lvl-confirmed-bg); border: 1.5px solid var(--lvl-confirmed); color: var(--text); text-decoration: none; box-shadow: var(--e-1); transition: box-shadow 0.15s; }
+  .tx-strip:hover { box-shadow: var(--e-2); color: var(--text); }
+  .tx-strip-ico { color: var(--lvl-confirmed); flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--surface); }
+  .tx-strip-body { display: grid; gap: 0; min-width: 0; flex: 1; line-height: 1.45; }
+  .tx-strip-body strong { color: var(--lvl-confirmed); }
+  .tx-strip-cta { font-weight: 700; color: var(--lvl-confirmed); white-space: nowrap; }
+  @media (max-width: 640px) { .tx-strip { flex-wrap: wrap; } .tx-strip-cta { width: 100%; padding-left: 56px; } }
+</style>

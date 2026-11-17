@@ -1,0 +1,86 @@
+---
+import LevelBadge from './LevelBadge.astro';
+import { tx } from '../../lib/toxicI18n';
+import type { Lang } from '../../lib/i18n';
+import {
+  SUBSTANCES, levelOf, ratioOf, severityOf, fmtRatio, fmtValue, unitLabel, sampledLabel, roundName, riverName, riverSlug, noteText, placeProvince,
+  type Measurement,
+} from '../../lib/toxic';
+interface Props { m: Measurement; lang: Lang; isLatest?: boolean }
+const { m, lang, isLatest = true } = Astro.props;
+const d = tx(lang);
+const level = levelOf(m);
+const ratio = ratioOf(m);
+const sev = severityOf(ratio);
+const sub = SUBSTANCES[m.substance];
+const scaleMax = ratio ? Math.min(10, Math.max(2, Math.ceil(ratio * 1.15))) : 1;
+const fill = ratio ? Math.min(100, (ratio / scaleMax) * 100) : 0;
+const stdPos = ratio ? (1 / scaleMax) * 100 : 0;
+const note = noteText(m, lang);
+---
+<li
+  class:list={['reading', `lvl-row-${level}`, `mx-${m.matrix}`]}
+  data-river={riverSlug(m.river)} data-substance={m.substance} data-matrix={m.matrix} data-province={m.province}
+  data-latest={isLatest ? '1' : '0'} data-station={m.station}
+>
+  <div class="rd-top">
+    <LevelBadge level={level} lang={lang} />
+    <span class:list={['mx-tag', m.matrix]}>{d.matrix[m.matrix]}</span>
+    {!isLatest && <span class="badge old">{roundName(m.round, lang)}</span>}
+  </div>
+  <h3 class="rd-sub"><span>{lang === 'en' ? sub.en : sub.th}</span> <abbr class="muted" title={sub.en}>{sub.symbol}</abbr></h3>
+  <div class="rd-vals">
+    <div><span class="rd-k">{d.value}</span><span class="rd-v">{m.belowDetection ? `< ${fmtValue(m.value)}` : fmtValue(m.value)}{' '}<small>{unitLabel(m.unit, lang)}</small></span></div>
+    <div><span class="rd-k">{d.standard}</span><span class="rd-v std">{m.standard != null ? <>{fmtValue(m.standard)}{' '}<small>{unitLabel(m.unit, lang)}</small></> : <span class="muted">{d.standardNone}</span>}</span></div>
+  </div>
+  {ratio != null && level === 'confirmed' && (
+    <div class="rd-bar-wrap">
+      <div class:list={['rd-bar', sev]} role="img" aria-label={fmtRatio(ratio, lang)}>
+        <span class="rd-fill" style={`width:${fill.toFixed(1)}%`}></span>
+        <span class="rd-std" style={`left:${stdPos.toFixed(1)}%`} title={d.standard}></span>
+      </div>
+      <p class="rd-ratio" aria-hidden="true"><strong>{fmtRatio(ratio, lang)}</strong></p>
+    </div>
+  )}
+  {m.belowDetection && <p class="rd-note">{d.belowDetection}</p>}
+  {note && !m.belowDetection && <p class="rd-note">{note}</p>}
+  <dl class="rd-meta">
+    <div><dt>{d.station}</dt><dd><strong>{m.station}</strong> · {riverName(m.river, lang)} · <span lang="th">{m.place}</span> · {placeProvince(m, lang)} <span class="badge approx">{d.approximate}</span></dd></div>
+    <div><dt>{d.sampled}</dt><dd><time datetime={m.sampledFrom}>{sampledLabel(m, lang)}</time> · {roundName(m.round, lang)}</dd></div>
+  </dl>
+  <p class="rd-src"><a href={m.reference.url} target="_blank" rel="noopener noreferrer"><span class="muted">{d.source}</span> <span lang="th">{m.reference.name.split(' — ')[0]}</span> <span aria-hidden="true">↗</span><span class="sr-only"> {m.reference.name} {d.newTab}</span></a></p>
+</li>
+<style is:global>
+  .reading { position: relative; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: var(--sp-4); box-shadow: var(--e-1); display: grid; gap: 6px; min-width: 0; }
+  .reading.lvl-row-confirmed { border-left: 5px solid var(--lvl-confirmed); }
+  .reading.lvl-row-watch { border-left: 5px dashed var(--lvl-watch); }
+  .reading.lvl-row-ok { border-left: 5px dotted var(--lvl-ok); }
+  .rd-top { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .mx-tag { font-size: var(--fs-xs); font-weight: 700; padding: 2px 10px; border-radius: var(--r-sm); }
+  .mx-tag.water { background: var(--primary-soft); color: var(--primary); }
+  .mx-tag.sediment { background: var(--surface-3); color: var(--text); }
+  .mx-tag.sediment::before { content: '▤ '; }
+  .mx-tag.water::before { content: '≈ '; }
+  .badge.old { background: var(--surface-2); color: var(--muted); }
+  .rd-sub { font-size: var(--fs-lg); margin: 2px 0 0; }
+  .rd-sub abbr { text-decoration: none; font-size: var(--fs-sm); font-weight: 600; }
+  .rd-vals { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
+  .rd-k { display: block; font-size: var(--fs-xs); color: var(--muted); font-weight: 600; }
+  .rd-v { font-size: 1.15rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .rd-v small { font-size: var(--fs-xs); font-weight: 600; color: var(--muted); }
+  .rd-v.std { font-weight: 600; }
+  .rd-bar-wrap { display: grid; gap: 2px; }
+  .rd-bar { position: relative; height: 12px; border-radius: var(--r-pill); background: var(--surface-3); overflow: visible; }
+  .rd-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: inherit; background: repeating-linear-gradient(135deg, var(--lvl-confirmed) 0 6px, color-mix(in srgb, var(--lvl-confirmed) 80%, var(--surface)) 6px 9px); }
+  .rd-bar.above .rd-fill { opacity: 0.75; }
+  .rd-std { position: absolute; top: -4px; bottom: -4px; width: 3px; margin-left: -1.5px; background: var(--text); border-radius: 2px; }
+  .rd-ratio { margin: 0; font-size: var(--fs-sm); color: var(--lvl-confirmed); }
+  .rd-note { margin: 0; font-size: var(--fs-sm); color: var(--muted); font-style: italic; }
+  .rd-meta { margin: 4px 0 0; display: grid; gap: 2px; font-size: var(--fs-sm); }
+  .rd-meta div { display: grid; grid-template-columns: 72px 1fr; gap: 6px; }
+  .rd-meta dt { color: var(--muted); font-weight: 600; }
+  .rd-meta dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+  .badge.approx { font-weight: 500; font-style: italic; background: var(--surface-2); color: var(--muted); }
+  .rd-src { margin: 4px 0 0; font-size: var(--fs-sm); }
+  .rd-src a { font-weight: 600; display: inline-block; padding: 4px 0; }
+</style>

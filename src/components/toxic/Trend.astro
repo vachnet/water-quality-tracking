@@ -1,0 +1,48 @@
+---
+import { tx } from '../../lib/toxicI18n';
+import type { Lang } from '../../lib/i18n';
+import { roundName, riverName, fmtValue, type TrendPoint } from '../../lib/toxic';
+import { fmtDate } from '../../lib/format';
+interface Props { station: string; river: string; points: TrendPoint[]; lang: Lang }
+const { station, river, points, lang } = Astro.props;
+const d = tx(lang);
+const W = 260, H = 96, P = 16, top = 14, bottom = 22;
+const std = points.find((p) => p.standard != null)?.standard ?? null;
+const max = Math.max(...points.map((p) => p.value), std ?? 0) * 1.2;
+const x = (i: number) => P + (points.length === 1 ? 0 : (i * (W - 2 * P)) / (points.length - 1));
+const y = (v: number) => top + (1 - v / max) * (H - top - bottom);
+const line = points.map((p, i) => `${x(i).toFixed(1)},${y(p.value).toFixed(1)}`).join(' ');
+const short = (r: string) => (r.match(/\d+/)?.[0] ?? r);
+---
+<figure class="trend">
+  <figcaption><strong>{station}</strong> <span class="muted">· {riverName(river, lang)}</span></figcaption>
+  <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={d.trendAlt(station)} preserveAspectRatio="xMidYMid meet">
+    {std != null && <line x1={P - 6} x2={W - P + 6} y1={y(std)} y2={y(std)} class="t-std" />}
+    <polyline points={line} class="t-line" />
+    {points.map((p, i) => (
+      <>
+        <circle cx={x(i)} cy={y(p.value)} r="4.5" class:list={['t-dot', p.exceeds && 'ex']} />
+        <text x={x(i)} y={y(p.value) - 8} class="t-val" text-anchor="middle">{fmtValue(p.value)}</text>
+        <text x={x(i)} y={H - 6} class="t-lab" text-anchor="middle">{lang === 'en' ? `R${short(p.round)}` : `ครั้ง ${short(p.round)}`}</text>
+      </>
+    ))}
+  </svg>
+  <div class="sr-only"><table>
+    <caption>{d.trendAlt(station)} (mg/L)</caption>
+    <thead><tr><th>{d.round}</th><th>{d.sampled}</th><th>{d.value}</th><th>{d.standard}</th></tr></thead>
+    <tbody>{points.map((p) => <tr><td>{roundName(p.round, lang)}</td><td>{fmtDate(p.sampledFrom, lang)}</td><td>{p.value}</td><td>{p.standard ?? '—'}</td></tr>)}</tbody>
+  </table></div>
+  <p class="t-dates muted">{fmtDate(points[0].sampledFrom, lang)} → {fmtDate(points[points.length - 1].sampledFrom, lang)}</p>
+</figure>
+<style is:global>
+  .trend { margin: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: var(--sp-3) var(--sp-4); box-shadow: var(--e-1); min-width: 0; }
+  .trend figcaption { font-size: var(--fs-sm); margin-bottom: 4px; }
+  .trend svg { width: 100%; height: auto; display: block; overflow: visible; }
+  .t-std { stroke: var(--lvl-confirmed); stroke-width: 1.5; stroke-dasharray: 4 3; }
+  .t-line { fill: none; stroke: var(--primary); stroke-width: 2.5; stroke-linejoin: round; }
+  .t-dot { fill: var(--surface); stroke: var(--primary); stroke-width: 2.5; }
+  .t-dot.ex { fill: var(--lvl-confirmed); stroke: var(--lvl-confirmed); }
+  .t-val { font: 700 10px var(--font); fill: var(--text); }
+  .t-lab { font: 600 10px var(--font); fill: var(--muted); }
+  .t-dates { font-size: var(--fs-xs); margin: 4px 0 0; }
+</style>

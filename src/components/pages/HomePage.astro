@@ -2,6 +2,7 @@
 import Base from '../../layouts/Base.astro';
 import Explorer from '../Explorer.astro';
 import AboutData from '../AboutData.astro';
+import ToxicStrip from '../toxic/Strip.astro';
 import { reports, stats, generatedAt, isDemo } from '../../lib/data';
 import { fmtDate, fmtDateTime, timeAgo, beYear } from '../../lib/format';
 import { t, lurl, type Lang } from '../../lib/i18n';
@@ -101,6 +102,8 @@ const strip = [
     </div>
   </section>
 
+  <div class="wrap tx-strip-wrap"><ToxicStrip lang={lang} /></div>
+
   <section class="wrap map-sec" id="map" aria-label={d.map.label}>
     <Explorer lang={lang} items={reports} />
     <p class="more"><a href={lurl(lang, '/province/')}>{d.explorer.more} →</a></p>
@@ -152,7 +155,8 @@ const strip = [
   .stat.src-government { box-shadow: inset 3px 0 0 #9aa9ff; } .stat.src-news { box-shadow: inset 3px 0 0 #f6b35c; } .stat.src-community { box-shadow: inset 3px 0 0 #5fd3c4; }
   .live { display: inline-flex; align-items: center; gap: 8px; margin: 0; opacity: 0.85; }
   .pulse { width: 8px; height: 8px; border-radius: 50%; background: #62d49b; animation: pulse 2s infinite; --ok: #62d49b; }
-  .map-sec { margin-top: var(--sp-5); }
+  .tx-strip-wrap { margin-top: var(--sp-4); }
+  .map-sec { margin-top: var(--sp-4); }
   .more { margin: var(--sp-3) 0 0; font-weight: 600; }
   .steps { list-style: none; padding: 0; margin: 0 0 var(--sp-5); display: grid; gap: var(--sp-4); grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
   .steps .card { position: relative; }

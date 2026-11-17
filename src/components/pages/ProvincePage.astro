@@ -1,6 +1,8 @@
 ---
 import Base from '../../layouts/Base.astro';
 import Explorer from '../Explorer.astro';
+import ToxicSection from '../toxic/ProvinceSection.astro';
+import { measurementsByProvince } from '../../lib/toxic';
 import { PROVINCES, type Province } from '../../lib/provinces';
 import { reportsByProvince, countBySource } from '../../lib/data';
 import { abs } from '../../lib/url';
@@ -44,7 +46,7 @@ const copy = {
   title={copy.title}
   description={`${copy.summary}. ${copy.desc}`}
   path={`/province/${province.slug}/`}
-  noindex={list.length === 0}
+  noindex={list.length === 0 && measurementsByProvince(province.slug).length === 0}
   jsonLd={{ '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
     { '@type': 'ListItem', position: 1, name: d.home, item: ab('/') },
     { '@type': 'ListItem', position: 2, name: d.nav.provinces, item: ab('/province/') },
@@ -75,6 +77,8 @@ const copy = {
         <a class="btn accent" href={lurl(lang, '/report/')}>{copy.cta}</a>
       </div>
     )}
+
+    <ToxicSection lang={lang} province={province.slug} />
 
     <h2 class="near-h">{copy.near}</h2>
     <ul class="near">{near.map((p) => <li><a class="btn secondary small" href={lurl(lang, `/province/${p.slug}/`)}>{lang === 'en' ? p.nameEn : p.name}</a></li>)}</ul>

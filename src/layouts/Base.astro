@@ -3,6 +3,7 @@ import '../styles/global.css';
 import { SITE_NAME, SITE_TAGLINE } from '../lib/types';
 import { abs, url } from '../lib/url';
 import { t, lpath, lurl, otherLang, OG_LOCALE, PCD_DATASET, type Lang } from '../lib/i18n';
+import { tx } from '../lib/toxicI18n';
 
 interface Props {
   title: string;
@@ -16,8 +17,10 @@ interface Props {
   alternates?: boolean;
   /** Hide the sticky mobile "Report" bar (the report page itself). */
   hideReportBar?: boolean;
+  /** Atom feed (absolute URL) advertised with <link rel="alternate">. */
+  feed?: { href: string; title: string };
 }
-const { title, description, path, lang = 'th', noindex = false, jsonLd, alternates = true, hideReportBar = false } = Astro.props;
+const { title, description, path, lang = 'th', noindex = false, jsonLd, alternates = true, hideReportBar = false, feed } = Astro.props;
 const d = t(lang);
 const other = otherLang(lang);
 const canonical = abs(lpath(lang, path), Astro.site);
@@ -36,6 +39,7 @@ const baseLd = [
 ];
 const nav = [
   { href: '/', label: d.nav.map },
+  { href: '/toxic/', label: tx(lang).nav, alert: true },
   { href: '/province/', label: d.nav.provinces },
   { href: '/guide/', label: d.nav.guide },
   { href: '/about/', label: d.nav.about },
@@ -62,6 +66,7 @@ const switchHref = alternates ? lurl(other, path) : lurl(other, '/');
         <link rel="alternate" hreflang="x-default" href={abs(lpath('th', path), Astro.site)} />
       </>
     )}
+    {feed && <link rel="alternate" type="application/atom+xml" title={feed.title} href={feed.href} />}
     <meta name="robots" content={noindex ? 'noindex, nofollow' : 'index, follow, max-image-preview:large'} />
     <meta name="theme-color" content="#0a5c8f" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#0a1620" media="(prefers-color-scheme: dark)" />
@@ -96,7 +101,10 @@ const switchHref = alternates ? lurl(other, path) : lurl(other, '/');
         <nav aria-label={d.navLabel} class="main-nav">
           <ul>
             {nav.map((n) => (
-              <li><a href={lurl(lang, n.href)} aria-current={isCurrent(n.href) ? 'page' : undefined}>{n.label}</a></li>
+              <li><a href={lurl(lang, n.href)} class:list={[n.alert && 'nav-alert']} aria-current={isCurrent(n.href) ? 'page' : undefined}>
+                {n.alert && <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.2 15.2 14H.8z" fill="currentColor" /><path d="M8 5.6v4.2M8 11.6v.4" stroke="var(--surface)" stroke-width="1.8" stroke-linecap="round" /></svg>}
+                {n.label}
+              </a></li>
             ))}
           </ul>
         </nav>
@@ -125,6 +133,8 @@ const switchHref = alternates ? lurl(other, path) : lurl(other, '/');
         <div>
           <p class="foot-h">{SITE_NAME}</p>
           <ul class="foot-list small">
+            <li><a href={lurl(lang, '/toxic/')}>{tx(lang).nav}</a></li>
+            <li><a href={url(lang === 'en' ? '/en/toxic.xml' : '/toxic.xml')} type="application/atom+xml">{tx(lang).rssH} (Atom)</a></li>
             <li><a href={lurl(lang, '/about/')}>{d.footer.about}</a></li>
             <li><a href={lurl(lang, '/guide/')}>{d.footer.guide}</a></li>
             <li><a href={lurl(lang, '/privacy/')}>{d.footer.privacy}</a></li>
@@ -171,6 +181,8 @@ const switchHref = alternates ? lurl(other, path) : lurl(other, '/');
   .main-nav a { display: flex; align-items: center; min-height: 44px; padding: 0 14px; border-radius: var(--r-pill); color: var(--text); text-decoration: none; font-weight: 600; font-size: var(--fs-sm); }
   .main-nav a:hover { background: var(--surface-2); color: var(--text); }
   .main-nav a[aria-current='page'] { background: var(--primary-soft); color: var(--primary); }
+  .main-nav a.nav-alert { gap: 6px; color: var(--lvl-confirmed, #b42318); }
+  .main-nav a.nav-alert[aria-current='page'] { background: var(--lvl-confirmed-bg, #fde8e6); color: var(--lvl-confirmed, #b42318); }
   .lang-switch { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px; border-radius: var(--r-pill); border: 1px solid var(--border); color: var(--text); text-decoration: none; font-weight: 600; font-size: var(--fs-sm); }
   .lang-switch:hover { background: var(--surface-2); color: var(--text); }
   @media (max-width: 860px) {

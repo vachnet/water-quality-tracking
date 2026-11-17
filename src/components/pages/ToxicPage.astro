@@ -1,0 +1,454 @@
+---
+import Base from '../../layouts/Base.astro';
+import Reading from '../toxic/Reading.astro';
+import LevelBadge from '../toxic/LevelBadge.astro';
+import Trend from '../toxic/Trend.astro';
+import Follow from '../toxic/Follow.astro';
+import { tx } from '../../lib/toxicI18n';
+import { t, lurl, lpath, PCD_DATASET, type Lang } from '../../lib/i18n';
+import { abs } from '../../lib/url';
+import { SITE_NAME } from '../../lib/types';
+import { PROVINCES } from '../../lib/provinces';
+import { fmtDateTime, timeAgo } from '../../lib/format';
+import {
+  measurements, measurementsGeneratedAt, latest, sortReadings, riverSummaries, trendStations, levelOf, ratioOf, fmtRatio, fmtValue, unitLabel,
+  sampledLabel, roundName, riverName, riverSlug, SUBSTANCES, placeProvince, type Level, type Matrix,
+} from '../../lib/toxic';
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const d = tx(lang);
+const g = t(lang);
+
+const latestIds = new Set(latest().map((m) => m.id));
+const rows = [...measurements].sort(sortReadings);
+const summaries = riverSummaries();
+const trends = trendStations();
+const matrices: Matrix[] = ['water', 'sediment'];
+const rivers = [...new Set(measurements.map((m) => m.river))].map((r) => ({ v: riverSlug(r), label: riverName(r, lang) }));
+const substances = [...new Set(measurements.map((m) => m.substance))].map((s) => ({ v: s, label: lang === 'en' ? SUBSTANCES[s].en : SUBSTANCES[s].th }));
+const provinces = [...new Set(measurements.map((m) => m.province))].map((slug) => {
+  const p = PROVINCES.find((x) => x.slug === slug)!;
+  return { v: slug, label: lang === 'en' ? p.nameEn : p.name };
+});
+const levels: Level[] = ['confirmed', 'watch', 'ok'];
+
+// Map payload: one marker per station; readings are pre-localised strings (rendered client-side with textContent).
+const byStation = new Map<string, typeof rows>();
+for (const m of rows) byStation.set(m.station, [...(byStation.get(m.station) ?? []), m]);
+const stations = [...byStation.entries()].map(([station, list]) => {
+  const top = list.reduce((a, b) => (b.sampledFrom > a.sampledFrom ? b : a));
+  return {
+    station,
+    lat: top.lat,
+    lng: top.lng,
+    river: riverName(top.river, lang),
+    place: top.place,
+    province: placeProvince(top, lang),
+    readings: list.map((m) => {
+      const r = ratioOf(m);
+      const lv = levelOf(m);
+      return {
+        latest: latestIds.has(m.id),
+        level: lv,
+        levelLabel: d.level[lv],
+        ratio: lv === 'confirmed' && r ? r : null,
+        ratioText: lv === 'confirmed' && r ? fmtRatio(r, lang) : '',
+        sub: lang === 'en' ? SUBSTANCES[m.substance].en : SUBSTANCES[m.substance].th,
+        substance: m.substance,
+        matrix: m.matrix,
+        matrixLabel: d.matrix[m.matrix],
+        river: riverSlug(m.river),
+        province: m.province,
+        value: `${m.belowDetection ? '< ' : ''}${fmtValue(m.value)} ${unitLabel(m.unit, lang)}`,
+        std: m.standard != null ? `${d.standard} ${fmtValue(m.standard)} ${unitLabel(m.unit, lang)}` : d.standardNone,
+        when: `${sampledLabel(m, lang)} · ${roundName(m.round, lang)}`,
+        src: m.reference.name.split(' — ')[0],
+        url: m.reference.url,
+      };
+    }),
+  };
+});
+const mapStrings = { source: d.source, newTab: d.newTab, approximate: d.approximate, readings: d.stationReadings, failed: d.mapFailed };
+
+const feedHref = abs(lang === 'en' ? '/en/toxic.xml' : '/toxic.xml', Astro.site);
+const dates = measurements.map((m) => m.sampledFrom).sort();
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Dataset',
+    name: `${d.datasetName} — ${SITE_NAME}`,
+    description: d.description,
+    inLanguage: lang === 'th' ? 'th-TH' : 'en',
+    url: abs(lpath(lang, '/toxic/'), Astro.site),
+    creator: { '@type': 'GovernmentOrganization', name: 'Pollution Control Department (กรมควบคุมมลพิษ)', url: 'https://www.pcd.go.th/' },
+    isBasedOn: [...new Set(measurements.map((m) => m.reference.url))],
+    citation: [...new Map(measurements.map((m) => [m.reference.url, m.reference.name])).values()],
+    spatialCoverage: { '@type': 'Place', name: 'Thailand' },
+    temporalCoverage: `${dates[0]}/${dates[dates.length - 1]}`,
+    variableMeasured: [...new Set(measurements.map((m) => SUBSTANCES[m.substance].en))],
+    dateModified: measurementsGeneratedAt,
+    distribution: [{ '@type': 'DataDownload', encodingFormat: 'application/atom+xml', contentUrl: feedHref }],
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: g.home, item: abs(lpath(lang, '/'), Astro.site) },
+      { '@type': 'ListItem', position: 2, name: d.nav },
+    ],
+  },
+];
+---
+<Base lang={lang} title={d.title} description={d.description} path="/toxic/" jsonLd={jsonLd} feed={{ href: feedHref, title: d.feedTitle }}>
+  <div class="wrap section toxic">
+    <nav aria-label={g.breadcrumb} class="crumbs"><ol><li><a href={lurl(lang, '/')}>{g.home}</a></li><li aria-current="page">{d.nav}</li></ol></nav>
+    <header class="tx-head">
+      <h1>{d.h1}</h1>
+      <p class="lead">{d.lead}</p>
+      <p class="tx-meta small muted">
+        <span>{d.updated} <time datetime={measurementsGeneratedAt} title={fmtDateTime(measurementsGeneratedAt, lang)} data-ago>{timeAgo(measurementsGeneratedAt, lang)}</time></span>
+        <a href="#follow">{d.rssH} · {d.share} ↓</a>
+      </p>
+    </header>
+
+    <section aria-labelledby="status-h" class="tx-status">
+      <h2 id="status-h">{d.statusH}</h2>
+      <p class="muted small">{d.statusNote}</p>
+      {matrices.map((mx) => {
+        const list = summaries.filter((s) => s.matrix === mx);
+        return list.length > 0 && (
+          <div class:list={['status-group', mx]}>
+            <h3 class="sg-h"><span class:list={['mx-tag', mx]}>{d.matrix[mx]}</span> <span class="muted">{d.matrixLong[mx]}</span></h3>
+            <ul class="status-grid">
+              {list.map((s) => (
+                <li class:list={['status', s.exceeding ? 'has-ex' : s.watch ? 'has-watch' : 'is-ok']}>
+                  <p class="st-river">{riverName(s.river, lang)}</p>
+                  <p class="st-num">
+                    {s.exceeding > 0 ? <LevelBadge level="confirmed" lang={lang} size="md" /> : s.watch > 0 ? <LevelBadge level="watch" lang={lang} size="md" /> : <LevelBadge level="ok" lang={lang} size="md" />}
+                  </p>
+                  <p class="st-count"><strong>{s.exceeding > 0 ? d.exceeding(s.exceeding) : s.watch > 0 ? d.watching(s.watch) : d.noExceed}</strong> <span class="muted">· {d.stations(s.stations)}</span></p>
+                  {s.substances.length > 0 && <p class="st-subs small">{s.substances.map((x) => (lang === 'en' ? SUBSTANCES[x].en : SUBSTANCES[x].th)).join(', ')}</p>}
+                  <p class="st-when small"><span class="muted">{roundName(s.round, lang)} · {d.sampled}</span> <time datetime={s.sampledFrom}>{sampledLabel(s, lang)}</time></p>
+                  <p class="st-src small">{s.references.map((r) => <a href={r.url} target="_blank" rel="noopener noreferrer"><span class="muted">{d.source}</span> <span lang="th">{r.name.split(' — ')[0]}</span> ↗<span class="sr-only"> {d.newTab}</span></a>)}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        );
+      })}
+    </section>
+
+    <section aria-labelledby="levels-h" class="tx-levels">
+      <h2 id="levels-h">{d.levelsH}</h2>
+      <ul class="levels">
+        {levels.map((l) => <li><LevelBadge level={l} lang={lang} size="md" /><span>{d.levelLong[l]}</span></li>)}
+      </ul>
+      <p class="muted small">{d.levelsNote}</p>
+    </section>
+
+    <section aria-labelledby="results-h" class="tx-explorer" id="results">
+      <h2 id="results-h">{d.resultsH}</h2>
+      <form class="tx-filters card" aria-label={d.filtersH} onsubmit="return false">
+        <div class="f-field">
+          <label for="f-river">{d.river}</label>
+          <select id="f-river" data-f="river"><option value="">{d.allRivers}</option>{rivers.map((r) => <option value={r.v}>{r.label}</option>)}</select>
+        </div>
+        <div class="f-field">
+          <label for="f-substance">{d.substance}</label>
+          <select id="f-substance" data-f="substance"><option value="">{d.allSubstances}</option>{substances.map((s) => <option value={s.v}>{s.label}</option>)}</select>
+        </div>
+        <div class="f-field">
+          <label for="f-province">{d.province}</label>
+          <select id="f-province" data-f="province"><option value="">{d.allProvinces}</option>{provinces.map((p) => <option value={p.v}>{p.label}</option>)}</select>
+        </div>
+        <fieldset class="f-field f-matrix">
+          <legend>{d.sample}</legend>
+          <div class="seg">
+            <label><input type="radio" name="f-matrix" value="" checked /><span>{d.all}</span></label>
+            {matrices.map((mx) => <label><input type="radio" name="f-matrix" value={mx} /><span>{d.matrix[mx]}</span></label>)}
+          </div>
+        </fieldset>
+        <label class="f-latest"><input type="checkbox" id="f-latest" checked /> {d.latestOnly}</label>
+        <div class="f-foot">
+          <p class="tx-count muted small" aria-live="polite" data-tpl={d.showing(-1).replace('-1', '{n}')}></p>
+          <button type="reset" class="btn ghost small" id="f-reset">{d.reset}</button>
+        </div>
+      </form>
+
+      <div class="tx-grid">
+        <div class="tx-map-col">
+          <h3 class="sr-only">{d.mapH}</h3>
+          <div class="tx-map" id="tx-map">
+            <div class="map-canvas" role="region" aria-label={d.mapLabel}></div>
+            <div class="map-placeholder skeleton"><p>{d.mapLoading}</p></div>
+            <script type="application/json" id="tx-stations" set:html={JSON.stringify(stations)} />
+            <script type="application/json" id="tx-strings" set:html={JSON.stringify(mapStrings)} />
+          </div>
+          <p class="small muted tx-map-legend">
+            <LevelBadge level="confirmed" lang={lang} /> <LevelBadge level="watch" lang={lang} /> <LevelBadge level="ok" lang={lang} />
+            <span>{d.mapLegend} · {d.mapSed} · {d.approximate}</span>
+          </p>
+        </div>
+        <div class="tx-results">
+          {matrices.map((mx) => (
+            <section class="res-group" data-group={mx}>
+              <h3 class="sg-h"><span class:list={['mx-tag', mx]}>{d.matrix[mx]}</span> <span class="muted">{d.matrixLong[mx]}</span></h3>
+              <ul class="readings">
+                {rows.filter((m) => m.matrix === mx).map((m) => <Reading m={m} lang={lang} isLatest={latestIds.has(m.id)} />)}
+              </ul>
+            </section>
+          ))}
+          <button type="button" class="btn secondary block tx-more" hidden data-tpl={g.explorer.showAll}></button>
+          <div class="empty tx-empty" hidden><span class="ico" aria-hidden="true">🔎</span>{d.empty}</div>
+        </div>
+      </div>
+    </section>
+
+    {trends.length > 0 && (
+      <section aria-labelledby="trend-h" class="tx-trends">
+        <h2 id="trend-h">{d.trendH}</h2>
+        <p class="muted small">{d.trendNote}</p>
+        <div class="trend-grid">{trends.map((x) => <Trend station={x.station} river={x.river} points={x.points} lang={lang} />)}</div>
+      </section>
+    )}
+
+    <section aria-labelledby="how-h" class="tx-how">
+      <h2 id="how-h">{d.howH}</h2>
+      <ul class="how-list">{d.how.map((h) => <li>{h}</li>)}</ul>
+      <p class="notice info advice"><span aria-hidden="true">ℹ️</span> {d.advice}</p>
+      <p class="small muted">{lang === 'th' ? 'ข้อมูลดัชนีคุณภาพน้ำทั่วไป:' : 'General water quality index data:'} <a href={PCD_DATASET} target="_blank" rel="noopener noreferrer">data.go.th ↗</a></p>
+    </section>
+
+    <section class="tx-follow">
+      <Follow lang={lang} />
+    </section>
+  </div>
+</Base>
+
+<script>
+  import { baseMap } from '../../lib/map';
+
+  type R = {
+    latest: boolean; level: 'confirmed' | 'watch' | 'ok'; levelLabel: string; ratio: number | null; ratioText: string; sub: string; substance: string;
+    matrix: string; matrixLabel: string; river: string; province: string; value: string; std: string; when: string; src: string; url: string;
+  };
+  type S = { station: string; lat: number; lng: number; river: string; place: string; province: string; readings: R[] };
+
+  const form = document.querySelector<HTMLFormElement>('.tx-filters')!;
+  const cards = [...document.querySelectorAll<HTMLElement>('.reading')];
+  const count = document.querySelector<HTMLElement>('.tx-count')!;
+  const stations: S[] = JSON.parse(document.getElementById('tx-stations')!.textContent || '[]');
+  const S = JSON.parse(document.getElementById('tx-strings')!.textContent || '{}');
+  const val = (k: string) => (form.querySelector<HTMLSelectElement>(`[data-f=${k}]`)?.value ?? '');
+  const state = () => ({
+    river: val('river'), substance: val('substance'), province: val('province'),
+    matrix: (form.querySelector<HTMLInputElement>('input[name=f-matrix]:checked')?.value ?? ''),
+    latestOnly: (document.getElementById('f-latest') as HTMLInputElement).checked,
+  });
+  const match = (f: ReturnType<typeof state>, x: { river: string; substance: string; province: string; matrix: string; latest: boolean }) =>
+    (!f.river || x.river === f.river) && (!f.substance || x.substance === f.substance) && (!f.province || x.province === f.province) &&
+    (!f.matrix || x.matrix === f.matrix) && (!f.latestOnly || x.latest);
+
+  let redraw: (() => void) | undefined;
+  const PREVIEW = 6;
+  let expanded = false;
+  const more = document.querySelector<HTMLButtonElement>('.tx-more')!;
+  more.addEventListener('click', () => { expanded = true; apply(); });
+  function apply() {
+    const f = state();
+    let n = 0;
+    let cut = false;
+    const per: Record<string, number> = {};
+    for (const c of cards) {
+      const ok = match(f, { river: c.dataset.river!, substance: c.dataset.substance!, province: c.dataset.province!, matrix: c.dataset.matrix!, latest: c.dataset.latest === '1' });
+      const k = c.dataset.matrix!;
+      // Preview a few per sample type, so sediment stays visible (and separate) before "Show all".
+      const over = !expanded && (per[k] ?? 0) >= PREVIEW;
+      c.hidden = !ok || over;
+      if (ok) { n++; per[k] = (per[k] ?? 0) + 1; if (over) cut = true; }
+    }
+    more.hidden = expanded || !cut;
+    more.textContent = more.dataset.tpl!.replace('{n}', String(n));
+    document.querySelectorAll<HTMLElement>('.res-group').forEach((gr) => (gr.hidden = !gr.querySelector('.reading:not([hidden])')));
+    document.querySelector<HTMLElement>('.tx-empty')!.hidden = n > 0;
+    count.textContent = count.dataset.tpl!.replace('{n}', String(n));
+    redraw?.();
+    // Keep the filter in the URL so a filtered view can be shared.
+    try {
+      const u = new URL(location.href);
+      for (const k of ['river', 'substance', 'province', 'matrix'] as const) (f[k] ? u.searchParams.set(k, f[k]) : u.searchParams.delete(k));
+      history.replaceState(null, '', u);
+    } catch { /* ignore */ }
+  }
+  // Pre-select from the URL (e.g. links from province pages).
+  const params = new URLSearchParams(location.search);
+  for (const k of ['river', 'substance', 'province']) {
+    const el = form.querySelector<HTMLSelectElement>(`[data-f=${k}]`);
+    const v = params.get(k);
+    if (el && v && [...el.options].some((o) => o.value === v)) el.value = v;
+  }
+  const mx = params.get('matrix');
+  if (mx) form.querySelectorAll<HTMLInputElement>('input[name=f-matrix]').forEach((i) => (i.checked = i.value === mx));
+  form.addEventListener('change', apply);
+  form.addEventListener('reset', () => setTimeout(apply, 0));
+  apply();
+
+  // ---- map (lazy) ----
+  const shell = document.getElementById('tx-map')!;
+  const el = (tag: string, cls?: string, text?: string) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  async function startMap() {
+    try {
+      const { maplibregl, map } = await baseMap(shell.querySelector<HTMLElement>('.map-canvas')!, { bounds: [97.2, 13.2, 102.4, 20.9] });
+      shell.classList.add('ready');
+      let popup: InstanceType<typeof maplibregl.Popup> | undefined;
+      const markers = stations.map((s) => {
+        const b = el('button', 'tx-marker') as HTMLButtonElement;
+        b.type = 'button';
+        const m = new maplibregl.Marker({ element: b }).setLngLat([s.lng, s.lat]).addTo(map);
+        b.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const f = state();
+          const list = s.readings.filter((r) => match(f, r));
+          const box = el('div', 'map-popup tx-pop');
+          box.append(el('strong', 'pp-title', `${s.station} · ${s.river}`));
+          const meta = el('div', 'pp-meta', `${s.place} · ${s.province} · ${S.approximate}`);
+          meta.lang = 'th';
+          box.append(meta, el('div', 'tx-pop-h', S.readings));
+          const ul = el('ul', 'tx-pop-list');
+          for (const r of list) {
+            const li = el('li', `lv-${r.level}`);
+            li.append(el('span', `tx-pop-lv lv-${r.level}`, r.levelLabel));
+            li.append(el('div', 'tx-pop-v', `${r.sub} (${r.matrixLabel}): ${r.value}${r.ratioText ? ` — ${r.ratioText}` : ''}`));
+            li.append(el('div', 'tx-pop-s', `${r.std} · ${r.when}`));
+            if (/^https?:\/\//i.test(r.url)) {
+              const a = el('a') as HTMLAnchorElement;
+              a.href = r.url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+              a.append(el('span', 'pp-refp', `${S.source} `), document.createTextNode(`${r.src} ↗`), el('span', 'sr-only', ` ${S.newTab}`));
+              li.append(a);
+            }
+            ul.append(li);
+          }
+          box.append(ul);
+          popup?.remove();
+          popup = new maplibregl.Popup({ offset: 18, maxWidth: '320px' }).setLngLat([s.lng, s.lat]).setDOMContent(box).addTo(map);
+        });
+        return { s, b, m };
+      });
+      redraw = () => {
+        const f = state();
+        popup?.remove();
+        for (const { s, b } of markers) {
+          const list = s.readings.filter((r) => match(f, r));
+          b.hidden = list.length === 0;
+          if (!list.length) continue;
+          // Water and sediment are never mixed in one number: water wins; a sediment-only marker is square.
+          const water = list.filter((r) => r.matrix === 'water');
+          const basis = water.length ? water : list;
+          const sedOnly = !water.length;
+          const conf = basis.filter((r) => r.level === 'confirmed');
+          const level = conf.length ? 'confirmed' : basis.some((r) => r.level === 'watch') ? 'watch' : 'ok';
+          const ratio = Math.max(0, ...conf.map((r) => r.ratio ?? 1));
+          const size = level === 'confirmed' ? Math.round(30 + Math.min(ratio, 8) * 4) : level === 'watch' ? 30 : 24;
+          b.className = `tx-marker lv-${level}${sedOnly ? ' sed' : ''}`;
+          b.style.width = b.style.height = `${size}px`;
+          b.textContent = level === 'confirmed' ? `${ratio >= 10 ? ratio.toFixed(0) : ratio.toFixed(1)}×` : level === 'watch' ? '!' : '✓';
+          b.setAttribute('aria-label', `${s.station} ${s.river} (${basis[0].matrixLabel}): ${basis[0].levelLabel}${conf.length ? `, ${conf.sort((a, z) => (z.ratio ?? 0) - (a.ratio ?? 0))[0].ratioText}` : ''}`);
+          b.style.zIndex = String(level === 'confirmed' ? 10 + Math.round(ratio) : 1);
+        }
+      };
+      redraw();
+    } catch {
+      shell.querySelector('.map-placeholder')?.classList.remove('skeleton');
+      const p = shell.querySelector('.map-placeholder p');
+      if (p) p.textContent = S.failed;
+    }
+  }
+  const idle = (cb: () => void) => ('requestIdleCallback' in window ? requestIdleCallback(cb, { timeout: 1500 }) : setTimeout(cb, 200));
+  new IntersectionObserver((entries, obs) => {
+    if (entries.some((e) => e.isIntersecting)) { obs.disconnect(); idle(startMap); }
+  }, { rootMargin: '200px' }).observe(shell);
+</script>
+
+<style is:global>
+  .tx-head .lead { max-width: 68ch; font-size: var(--fs-lg); }
+  .tx-meta { display: flex; flex-wrap: wrap; gap: 6px 16px; }
+  .toxic > section { margin-top: var(--sp-7); }
+  .toxic .tx-status { margin-top: var(--sp-5); }
+  .sg-h { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: var(--fs-md); margin: var(--sp-4) 0 var(--sp-3); }
+  .sg-h .muted { font-weight: 500; font-size: var(--fs-sm); }
+  .status-group.sediment { margin-top: var(--sp-5); padding-top: var(--sp-4); border-top: 2px dashed var(--border); }
+  .status-grid { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--sp-3); grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); }
+  .status { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: var(--sp-4); box-shadow: var(--e-1); display: grid; gap: 6px; align-content: start; }
+  .status.has-ex { border-top: 5px solid var(--lvl-confirmed); }
+  .status.has-watch { border-top: 5px dashed var(--lvl-watch); }
+  .status.is-ok { border-top: 5px dotted var(--lvl-ok); }
+  .status p { margin: 0; }
+  .st-river { font-weight: 700; font-size: var(--fs-lg); }
+  .st-src a { display: inline-block; margin-right: 10px; padding: 2px 0; font-weight: 600; }
+  .levels { list-style: none; padding: 0; margin: 0 0 var(--sp-3); display: grid; gap: var(--sp-2); }
+  .levels li { display: grid; grid-template-columns: minmax(0, 260px) 1fr; gap: var(--sp-3); align-items: center; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); padding: var(--sp-3) var(--sp-4); }
+  .levels .lvl { justify-self: start; white-space: normal; }
+
+  .tx-filters { display: grid; gap: var(--sp-3) var(--sp-4); grid-template-columns: repeat(4, minmax(0, 1fr)); padding: var(--sp-4); margin-bottom: var(--sp-4); }
+  .f-field { display: grid; gap: 4px; min-width: 0; border: 0; padding: 0; margin: 0; }
+  .f-field label, .f-field legend { font-size: var(--fs-xs); font-weight: 700; color: var(--muted); padding: 0; }
+  .seg { display: flex; border: 1.5px solid var(--border); border-radius: var(--r-md); overflow: hidden; min-height: var(--tap); }
+  .seg label { flex: 1; position: relative; display: flex; }
+  .seg input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+  .seg span { flex: 1; display: grid; place-items: center; font-size: var(--fs-sm); font-weight: 600; padding: 0 8px; }
+  .seg label + label span { border-left: 1px solid var(--border); }
+  .seg input:checked + span { background: var(--text); color: var(--surface); }
+  .seg input:focus-visible + span { outline: 3px solid var(--focus); outline-offset: -3px; }
+  .f-latest { display: flex; align-items: center; gap: 8px; font-size: var(--fs-sm); font-weight: 600; grid-column: 1 / 3; min-height: 40px; }
+  .f-latest input { width: 20px; height: 20px; accent-color: var(--primary); }
+  .f-foot { grid-column: 3 / -1; display: flex; justify-content: flex-end; align-items: center; gap: var(--sp-3); }
+  .f-foot p { margin: 0; }
+
+  .tx-grid { display: grid; gap: var(--sp-5); grid-template-columns: minmax(0, 1fr); }
+  .tx-map { position: relative; height: 480px; border-radius: var(--r-xl); overflow: hidden; border: 1px solid var(--border); background: var(--surface-2); box-shadow: var(--e-1); }
+  .tx-map.ready .map-placeholder { display: none; }
+  .tx-map .map-canvas { position: absolute; inset: 0; }
+  .tx-map-legend { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: var(--sp-2); }
+  .res-group + .res-group { margin-top: var(--sp-5); padding-top: var(--sp-3); border-top: 2px dashed var(--border); }
+  .res-group .sg-h { margin-top: 0; }
+  .readings { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--sp-3); grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+
+  .tx-marker { display: grid; place-items: center; border-radius: 50%; font: 700 12px/1 var(--font); cursor: pointer; padding: 0; box-shadow: 0 2px 8px rgb(0 0 0 / 0.3); }
+  .tx-marker.lv-confirmed { background: #b42318; color: #fff; border: 3px solid #fff; }
+  .tx-marker.lv-watch { background: #fff1d6; color: #6b3a00; border: 3px dashed #8a4b00; font-size: 15px; }
+  .tx-marker.lv-ok { background: #e2f5ea; color: #0d5a37; border: 3px dotted #157046; }
+  .tx-marker.sed { border-radius: 8px; }
+  .tx-marker:focus-visible { outline: 3px solid #1b7fd1; outline-offset: 2px; }
+  .tx-map .maplibregl-popup-content { font-family: var(--font); border-radius: 14px; padding: 14px 16px; box-shadow: var(--e-3); max-height: min(360px, 60vh); overflow-y: auto; }
+  .tx-map .maplibregl-popup-close-button { width: 32px; height: 32px; font-size: 22px; color: #0c2230; }
+  .tx-pop { color: #0c2230; font-size: 0.88rem; line-height: 1.45; padding-right: 14px; }
+  .tx-pop .pp-title { display: block; font-size: 0.98rem; }
+  .tx-pop .pp-meta { font-size: 0.78rem; color: #4a6070; }
+  .tx-pop-h { margin: 8px 0 4px; font-weight: 700; font-size: 0.8rem; color: #4a6070; }
+  .tx-pop-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+  .tx-pop-list li { border-left: 4px solid #157046; padding-left: 8px; }
+  .tx-pop-list li.lv-confirmed { border-left: 4px solid #b42318; }
+  .tx-pop-list li.lv-watch { border-left: 4px dashed #8a4b00; }
+  .tx-pop-lv { font-size: 0.72rem; font-weight: 700; text-transform: none; }
+  .tx-pop-lv.lv-confirmed { color: #b42318; } .tx-pop-lv.lv-watch { color: #8a4b00; } .tx-pop-lv.lv-ok { color: #157046; }
+  .tx-pop-v { font-weight: 700; }
+  .tx-pop-s { font-size: 0.78rem; color: #4a6070; }
+  .tx-pop a { color: #0a5c8f; font-weight: 600; font-size: 0.82rem; }
+  .tx-pop .pp-refp { color: #4a6070; font-weight: 500; }
+
+  .trend-grid { display: grid; gap: var(--sp-3); grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+  .how-list { max-width: 75ch; padding-left: 1.3em; }
+  .how-list li { margin-bottom: 0.5em; }
+  .advice { max-width: 75ch; font-size: var(--fs-md); }
+
+  @media (max-width: 980px) {
+    .tx-filters { grid-template-columns: 1fr 1fr; }
+    .f-latest { grid-column: 1 / -1; }
+    .f-foot { grid-column: 1 / -1; justify-content: space-between; }
+    .f-matrix { grid-column: 1 / -1; }
+    .tx-grid { grid-template-columns: 1fr; }
+    .tx-map { height: min(60vh, 440px); }
+    .levels li { grid-template-columns: 1fr; gap: 6px; }
+  }
+</style>

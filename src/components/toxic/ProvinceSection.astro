@@ -1,0 +1,23 @@
+---
+import Reading from './Reading.astro';
+import { tx } from '../../lib/toxicI18n';
+import { lurl, type Lang } from '../../lib/i18n';
+import { latest, measurementsByProvince } from '../../lib/toxic';
+interface Props { lang: Lang; province: string }
+const { lang, province } = Astro.props;
+const d = tx(lang);
+const rows = latest(measurementsByProvince(province));
+const shown = rows.slice(0, 6);
+---
+{rows.length > 0 && (
+  <section class="tx-prov" aria-labelledby="tx-prov-h">
+    <h2 id="tx-prov-h">{d.provinceH}</h2>
+    <p class="muted small">{d.lead}</p>
+    <ul class="readings tx-prov-grid">{shown.map((m) => <Reading m={m} lang={lang} />)}</ul>
+    <p><a class="btn secondary" href={`${lurl(lang, '/toxic/')}?province=${province}#results`}>{d.provinceMore} ({rows.length}) →</a></p>
+  </section>
+)}
+<style>
+  .tx-prov { margin-top: var(--sp-6); }
+  .tx-prov-grid { list-style: none; padding: 0; display: grid; gap: var(--sp-3); grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); margin: var(--sp-3) 0; }
+</style>

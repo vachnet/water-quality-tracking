@@ -1,0 +1,76 @@
+---
+// Alert channels: Atom feed (copyable) + share. No push messaging.
+import { tx } from '../../lib/toxicI18n';
+import { abs } from '../../lib/url';
+import { lpath, type Lang } from '../../lib/i18n';
+interface Props { lang: Lang; compact?: boolean }
+const { lang, compact = false } = Astro.props;
+const d = tx(lang);
+const feed = abs(lang === 'en' ? '/en/toxic.xml' : '/toxic.xml', Astro.site);
+const page = abs(lpath(lang, '/toxic/'), Astro.site);
+---
+<div class:list={['follow', compact && 'compact']} data-copied={d.copied} data-share-ok={d.shareCopied} data-share-fail={d.shareFailed}>
+  {!compact && <h2 id="follow">{d.followH}</h2>}
+  <div class="follow-grid">
+    <section class="card rss" aria-labelledby={compact ? undefined : 'rss-h'}>
+      <h3 id={compact ? undefined : 'rss-h'}>
+        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="6" fill="#c2410c" /><circle cx="7" cy="17" r="2" fill="#fff" /><path d="M5 11a8 8 0 0 1 8 8M5 6a13 13 0 0 1 13 13" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round" /></svg>
+        {d.rssH}
+      </h3>
+      <p class="muted small">{d.rssWhat}</p>
+      <div class="feed-row">
+        <label class="sr-only" for={`feed-url-${compact ? 'c' : 'f'}`}>{d.rssH}</label>
+        <input id={`feed-url-${compact ? 'c' : 'f'}`} class="feed-url" type="text" readonly value={feed} />
+        <button type="button" class="btn secondary copy-feed" data-url={feed}>{d.copyFeed}</button>
+      </div>
+      <p class="small"><a href={feed} type="application/atom+xml">{d.openFeed} ↗</a> · <span class="muted">{d.checkBack}</span></p>
+    </section>
+    <section class="card share-card">
+      <button type="button" class="btn accent big block share-btn" data-url={page} data-title={d.h1} data-text={d.shareText}>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="18" cy="5" r="2.5" /><circle cx="6" cy="12" r="2.5" /><circle cx="18" cy="19" r="2.5" /><path d="m8.2 10.9 7.6-4.4M8.2 13.1l7.6 4.4" /></svg>
+        {d.share}
+      </button>
+      <p class="share-status small" role="status" aria-live="polite"></p>
+    </section>
+  </div>
+</div>
+<script>
+  async function copy(text: string) {
+    try { await navigator.clipboard.writeText(text); return true; } catch { /* fall through */ }
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.append(ta); ta.select();
+      const ok = (document as unknown as { execCommand(c: string): boolean }).execCommand('copy'); ta.remove(); return ok;
+    } catch { return false; }
+  }
+  document.querySelectorAll<HTMLElement>('.follow').forEach((root) => {
+    const status = root.querySelector<HTMLElement>('.share-status')!;
+    root.querySelectorAll<HTMLButtonElement>('.copy-feed').forEach((b) => {
+      const label = b.textContent;
+      b.addEventListener('click', async () => {
+        const ok = await copy(b.dataset.url!);
+        b.textContent = ok ? root.dataset.copied! : label;
+        if (!ok) root.querySelector<HTMLInputElement>('.feed-url')?.select();
+        setTimeout(() => (b.textContent = label), 2500);
+      });
+    });
+    root.querySelectorAll<HTMLButtonElement>('.share-btn').forEach((b) => b.addEventListener('click', async () => {
+      const data = { title: b.dataset.title, text: b.dataset.text, url: b.dataset.url };
+      if (navigator.share) {
+        try { await navigator.share(data); return; } catch (e) { if ((e as DOMException)?.name === 'AbortError') return; }
+      }
+      status.textContent = (await copy(data.url!)) ? root.dataset.shareOk! : root.dataset.shareFail!;
+    }));
+  });
+</script>
+<style is:global>
+  .follow-grid { display: grid; gap: var(--sp-4); grid-template-columns: 2fr 1fr; align-items: start; }
+  .follow h3 { display: flex; align-items: center; gap: 8px; font-size: var(--fs-md); }
+  .feed-row { display: flex; gap: var(--sp-2); margin-bottom: var(--sp-2); }
+  .feed-url { flex: 1; min-width: 0; font-size: var(--fs-sm) !important; color: var(--muted) !important; }
+  .follow .rss p:last-child, .follow .share-card p { margin: 0; }
+  .share-status:not(:empty) { margin-top: var(--sp-2) !important; color: var(--ok); font-weight: 600; }
+  .follow.compact .follow-grid { grid-template-columns: 1fr; }
+  @media (max-width: 760px) { .follow-grid { grid-template-columns: 1fr; } .feed-row { flex-direction: column; } }
+</style>

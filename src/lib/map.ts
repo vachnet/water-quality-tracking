@@ -177,17 +177,25 @@ function markerImage(src: Source) {
   return g.getImageData(0, 0, S, S);
 }
 
-export async function createMap(container: HTMLElement, opts: MapOptions = {}): Promise<MapHandle> {
+/** Shared lazy MapLibre setup (style, controls, cooperative gestures). Used by every map on the site. */
+export async function baseMap(container: HTMLElement, view: { center?: [number, number]; zoom?: number; bounds?: [number, number, number, number] } = {}) {
   const [{ default: maplibregl }] = await Promise.all([import('maplibre-gl'), loadCss()]);
-  const s = opts.strings;
   const map = new maplibregl.Map({
     container,
     style: STYLE_URL || OSM_STYLE,
-    ...(opts.center ? { center: opts.center, zoom: opts.zoom ?? 8 } : { bounds: [97.3, 5.6, 105.7, 20.5] as [number, number, number, number], fitBoundsOptions: { padding: 16 } }),
+    ...(view.center
+      ? { center: view.center, zoom: view.zoom ?? 8 }
+      : { bounds: view.bounds ?? ([97.3, 5.6, 105.7, 20.5] as [number, number, number, number]), fitBoundsOptions: { padding: 24 } }),
     attributionControl: { compact: true },
     cooperativeGestures: true, // two-finger pan on mobile so the page can still scroll
   });
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+  return { maplibregl, map };
+}
+
+export async function createMap(container: HTMLElement, opts: MapOptions = {}): Promise<MapHandle> {
+  const { maplibregl, map } = await baseMap(container, { center: opts.center, zoom: opts.zoom });
+  const s = opts.strings;
 
   const handle: MapHandle = { map, setFilter: () => {}, focus: () => {}, pick: () => {} };
 

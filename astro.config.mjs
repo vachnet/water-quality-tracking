@@ -12,6 +12,11 @@ try {
   const { reports } = JSON.parse(readFileSync(new URL('./src/data/reports.json', import.meta.url), 'utf8'));
   active = new Set(reports.map((r) => r.province));
 } catch {}
+// Provinces with toxic-substance measurements also have content (and are indexable).
+try {
+  const { measurements } = JSON.parse(readFileSync(new URL('./src/data/measurements.json', import.meta.url), 'utf8'));
+  for (const m of measurements) active.add(m.province);
+} catch {}
 
 export default defineConfig({
   site,
